@@ -32,6 +32,7 @@ const (
 	CodeNetwork      Code = "NETWORK"       // a connection failed
 	CodeTimeout      Code = "TIMEOUT"       // something took longer than its limit
 	CodeRemoteFailed Code = "REMOTE_FAILED" // a command on the box failed
+	CodeBudget       Code = "BUDGET"        // a spending cap would be passed
 	CodeCancelled    Code = "CANCELLED"     // the user pressed Ctrl-C
 	CodeInternal     Code = "INTERNAL"      // a bug in protolift
 )
@@ -121,6 +122,8 @@ func ExitCode(err error) int {
 		return 7
 	case CodeNetwork, CodeTimeout:
 		return 8
+	case CodeBudget:
+		return 9
 	case CodeCancelled:
 		return 130
 	}

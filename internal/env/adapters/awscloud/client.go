@@ -52,6 +52,7 @@ const (
 // Cloud implements ports.Cloud.
 type Cloud struct {
 	region, profile string
+	self            string // the protolift binary, used as the ssh ProxyCommand
 	ec2             *ec2.Client
 	ssm             *ssm.Client
 	iam             *iam.Client
@@ -65,7 +66,7 @@ var _ ports.Cloud = (*Cloud)(nil)
 
 // New loads the user's own AWS login (env vars, profile or SSO: the AWS CLI
 // chain). protolift never stores credentials.
-func New(ctx context.Context, profile, region string) (*Cloud, error) {
+func New(ctx context.Context, profile, region, self string) (*Cloud, error) {
 	httpClient := &http.Client{
 		Timeout: callTimeout,
 		Transport: &http.Transport{
@@ -100,7 +101,7 @@ func New(ctx context.Context, profile, region string) (*Cloud, error) {
 			"pass --region (for example --region us-east-1), or set AWS_REGION")
 	}
 	return &Cloud{
-		region: cfg.Region, profile: profile, cfg: cfg,
+		region: cfg.Region, profile: profile, cfg: cfg, self: self,
 		ec2: ec2.NewFromConfig(cfg), ssm: ssm.NewFromConfig(cfg), iam: iam.NewFromConfig(cfg),
 		cw: cloudwatch.NewFromConfig(cfg), eic: ec2instanceconnect.NewFromConfig(cfg), sts: sts.NewFromConfig(cfg),
 	}, nil

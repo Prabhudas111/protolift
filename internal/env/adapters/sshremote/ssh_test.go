@@ -18,7 +18,7 @@ import (
 
 func newTest(t *testing.T) *Remote {
 	t.Helper()
-	r, err := New(Options{Root: t.TempDir(), Self: "/opt/protolift bin/protolift", Region: "us-east-1", Profile: "dev", SSH: "ssh"})
+	r, err := New(Options{Root: t.TempDir(), SSH: "ssh", Router: fakeRouter{}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,8 +37,7 @@ func TestConfigHasProxyKeyAndNoOpenHostKeys(t *testing.T) {
 	}
 	conf := string(raw)
 	for _, want := range []string{
-		"Host protolift-abc1234567", "HostName i-0123456789abcdef0", `"/opt/protolift bin/protolift" __proxy --region us-east-1 --profile "dev"`,
-		"%h %p", "StrictHostKeyChecking accept-new", "HostKeyAlias i-0123456789abcdef0", "IdentitiesOnly yes",
+		"Host protolift-abc1234567", "HostName i-0123456789abcdef0", `ProxyCommand "/opt/protolift bin/protolift" __proxy test`, ".pub\" %h %p", "StrictHostKeyChecking accept-new", "HostKeyAlias i-0123456789abcdef0", "IdentitiesOnly yes",
 	} {
 		if !strings.Contains(conf, want) {
 			t.Fatalf("config missing %q:\n%s", want, conf)
@@ -97,4 +96,12 @@ func TestShimName(t *testing.T) {
 			t.Fatalf("ShimName(%q) = %v", in, ok)
 		}
 	}
+}
+
+// fakeRouter stands in for a cloud adapter.
+type fakeRouter struct{}
+
+func (fakeRouter) HostName(b domain.Box) string { return b.ID }
+func (fakeRouter) ProxyCommand(_ domain.Box, pub string) string {
+	return `"/opt/protolift bin/protolift" __proxy test --pubkey "` + pub + `" %h %p`
 }

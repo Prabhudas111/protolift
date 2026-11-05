@@ -40,17 +40,27 @@ func (s *Service) Up(ctx context.Context, r UpRequest) error {
 	if err != nil {
 		return err
 	}
-	rec.ID, rec.Name, rec.Region, rec.Profile = p.ID, p.Name, s.d.Cloud.Region(), s.d.Profile
+	rec.ID, rec.Name, rec.Region = p.ID, p.Name, s.d.Cloud.Region()
+	rec.Provider, rec.Profile, rec.Project = s.d.Cloud.Provider(), s.d.Profile, s.d.Project
 
-	b, err := s.ensureBox(ctx, p, r, &rec)
+	rec.Dir, rec.EnvName = p.Dir, r.Name
+
+	b, allow, err := s.ensureBox(ctx, p, r, &rec)
 	if err != nil {
 		return err
 	}
 	if err := s.waitBooted(ctx, b); err != nil {
 		return err
 	}
-	if err := s.d.Remote.PutFile(ctx, b, s.d.Scripts.IdleConfigPath(), s.d.Scripts.IdleConfig(p.Settings), "0644"); err != nil {
+	if err := s.observe(b); err != nil {
 		return err
+	}
+	stops := s.d.Scripts.IdleConfig(p.Settings, s.budgetMinutes(allow, b))
+	if err := s.d.Remote.PutFile(ctx, b, s.d.Scripts.IdleConfigPath(), stops, "0644"); err != nil {
+		return err
+	}
+	if note := budgetNote(allow); note != "" {
+		s.d.UI.Info(note)
 	}
 	s.d.UI.Step("syncing your files (the first time copies everything)")
 	if err := s.d.Sync.Ensure(ctx, b, p, s.d.UI.Info); err != nil {
@@ -79,57 +89,107 @@ func (s *Service) Up(ctx context.Context, r UpRequest) error {
 }
 
 // ensureBox finds, wakes or creates the box. A new box is confirmed with
-// its size and price first; nothing is billed without a yes.
-func (s *Service) ensureBox(ctx context.Context, p domain.Project, r UpRequest, rec *ports.EnvRecord) (domain.Box, error) {
+// its size and price first; nothing is billed without a yes, and nothing
+// starts when a budget is used up.
+func (s *Service) ensureBox(ctx context.Context, p domain.Project, r UpRequest, rec *ports.EnvRecord) (domain.Box, domain.Allowance, error) {
+	var none domain.Allowance
 	b, ok, err := s.d.Cloud.FindBox(ctx, p.ID)
 	if err != nil {
-		return b, err
+		return b, none, err
 	}
 	if ok {
+		if err := s.observe(b); err != nil {
+			return b, none, err
+		}
+		allow, err := s.allowance(p, s.d.Cloud.Price(b.InstanceType))
+		if err != nil {
+			if b.State == domain.BoxRunning {
+				return b, none, errs.Wrap(errs.CodeBudget, err, errs.As(err).Message+"; the box is still running",
+					"run `protolift stop` now (it also stops itself within 5 minutes), or raise the budget")
+			}
+			return b, none, err
+		}
 		if r.Size != "" {
-			if want, err := domain.SizeByName(r.Size); err == nil && want.InstanceType(b.Arch) != b.InstanceType {
+			if want, err := domain.SizeByName(r.Size); err == nil && s.d.Cloud.InstanceType(want, b.Arch) != b.InstanceType {
 				s.d.UI.Warn(fmt.Sprintf("this box is %s; to change it run `protolift resize %s`", b.InstanceType, want.Name))
 			}
 		}
 		if b.State != domain.BoxRunning {
 			s.d.UI.Step("waking your box")
 			if err := s.d.Cloud.StartBox(ctx, b); err != nil {
-				return b, err
+				return b, none, err
 			}
+			b.StartedAt = s.d.Clock.Now()
 		}
 		rec.BoxID, rec.InstanceType, rec.Arch = b.ID, b.InstanceType, b.Arch
-		return b, s.d.Cloud.WaitReachable(ctx, b, s.d.UI.Info)
+		return b, allow, s.d.Cloud.WaitReachable(ctx, b, s.d.UI.Info)
 	}
 
 	arch, why, err := s.chooseArch(ctx, p, r.Arch)
 	if err != nil {
-		return b, err
+		return b, none, err
 	}
 	size, sizeWhy, err := s.chooseSize(p, r.Size)
 	if err != nil {
-		return b, err
+		return b, none, err
 	}
-	itype := size.InstanceType(arch)
+	itype, arch, why, err := s.offeredType(ctx, size, arch, why, r.Arch != "")
+	if err != nil {
+		return b, none, err
+	}
+	allow, err := s.allowance(p, s.d.Cloud.Price(itype))
+	if err != nil {
+		return b, none, err
+	}
 	s.d.UI.Info("chip: " + why)
 	s.d.UI.Info("size: " + sizeWhy)
-	q := fmt.Sprintf("Create box %s (%s) in %s · %s · stops after %d min idle?",
-		size, itype, s.d.Cloud.Region(), domain.PriceText(s.d.Cloud.Region(), itype), p.Settings.IdleMinutes)
+	q := fmt.Sprintf("Create box %s (%s) on %s %s · %s · stops after %d min idle?",
+		size, itype, s.d.Cloud.Provider(), s.d.Cloud.Region(), s.d.Cloud.Price(itype).Text(), p.Settings.IdleMinutes)
 	if !s.d.UI.Confirm(q) {
-		return b, errs.New(errs.CodeCancelled, "no box was created", "")
+		return b, none, errs.New(errs.CodeCancelled, "no box was created", "")
+	}
+	pub, err := s.d.Remote.PublicKey(p.ID)
+	if err != nil {
+		return b, none, err
 	}
 	s.d.UI.Step("creating your box")
 	b, err = s.d.Cloud.CreateBox(ctx, ports.BoxSpec{
-		EnvID: p.ID, Name: p.Name, InstanceType: itype, Arch: arch, BootScript: s.d.Scripts.Boot(p.Settings),
+		EnvID: p.ID, Name: p.Name, InstanceType: itype, Arch: arch, BootScript: s.d.Scripts.Boot(p.Settings), PubKey: pub,
+		MaxHours: p.Settings.MaxHours,
 	})
 	if err != nil {
-		return b, err
+		return b, none, err
 	}
 	rec.BoxID, rec.InstanceType, rec.Arch = b.ID, itype, arch
 	// Saved now, so a failure later in `up` still lets `down` find the box.
 	if err := s.d.Store.SaveEnv(*rec); err != nil {
-		return b, err
+		return b, none, err
 	}
-	return b, s.d.Cloud.WaitReachable(ctx, b, s.d.UI.Info)
+	if b.StartedAt.IsZero() {
+		b.StartedAt = s.d.Clock.Now()
+	}
+	return b, allow, s.d.Cloud.WaitReachable(ctx, b, s.d.UI.Info)
+}
+
+// offeredType maps the size and chip to the cloud's type and checks the
+// region offers it. ARM chosen by detection falls back to Intel when the
+// region has no ARM type; a chip the user asked for never changes silently.
+func (s *Service) offeredType(ctx context.Context, size domain.Size, arch domain.Arch, why string, userChose bool) (string, domain.Arch, string, error) {
+	itype := s.d.Cloud.InstanceType(size, arch)
+	ok, err := s.d.Cloud.Supports(ctx, itype)
+	if err != nil || ok {
+		return itype, arch, why, err
+	}
+	if arch == domain.ArchARM && !userChose {
+		intel := s.d.Cloud.InstanceType(size, domain.ArchIntel)
+		if ok, err := s.d.Cloud.Supports(ctx, intel); err != nil {
+			return "", "", "", err
+		} else if ok {
+			return intel, domain.ArchIntel, "Intel, because " + s.d.Cloud.Region() + " has no " + itype + " (ARM)", nil
+		}
+	}
+	return "", "", "", errs.New(errs.CodeCapacity, fmt.Sprintf("%s does not offer %s", s.d.Cloud.Region(), itype),
+		"pick another --size, --arch or --region")
 }
 
 func (s *Service) chooseArch(ctx context.Context, p domain.Project, flag domain.Arch) (domain.Arch, string, error) {
@@ -186,11 +246,27 @@ func (s *Service) chooseSize(p domain.Project, flag string) (domain.Size, string
 func (s *Service) waitBooted(ctx context.Context, b domain.Box) error {
 	return step(ctx, TimeoutBoot, "preparing the box", func(ctx context.Context) error {
 		announced := false
+		var firstNetErr time.Time
 		for {
 			out, err := s.d.Remote.Run(ctx, b, s.d.Scripts.BootState(), TimeoutQuick)
+			if errs.CodeOf(err) == errs.CodeNetwork {
+				// A just-started box can be "running" before its ssh and the
+				// cloud's tunnel accept connections. Only connection errors
+				// are waited out, and only for a bounded time.
+				if firstNetErr.IsZero() {
+					firstNetErr = time.Now()
+				}
+				if time.Since(firstNetErr) < bootConnectGrace {
+					if err := sleepCtx(ctx, 5*time.Second); err != nil {
+						return err
+					}
+					continue
+				}
+			}
 			if err != nil {
 				return err
 			}
+			firstNetErr = time.Time{}
 			state, log, _ := strings.Cut(strings.TrimSpace(out), "\n")
 			switch state {
 			case "ready":
@@ -206,11 +282,21 @@ func (s *Service) waitBooted(ctx context.Context, b domain.Box) error {
 				s.d.UI.Step("installing Docker and tools on the new box (about 2-3 minutes, only the first time)")
 				announced = true
 			}
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(5 * time.Second):
+			if err := sleepCtx(ctx, 5*time.Second); err != nil {
+				return err
 			}
 		}
 	})
+}
+
+// bootConnectGrace bounds how long boot polling waits out connection errors.
+const bootConnectGrace = 3 * time.Minute
+
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(d):
+		return nil
+	}
 }

@@ -1,0 +1,24 @@
+# Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
+# SPDX-License-Identifier: Apache-2.0
+#
+# protolift does not accept outside code contributions (see CONTRIBUTING.md).
+# This closes any pull request not opened by the repository owner. It never
+# checks out or runs the pull request's code, so it is safe on
+# pull_request_target.
+name: close-outside-prs
+on:
+  pull_request_target:
+    types: [opened, reopened]
+permissions:
+  pull-requests: write
+jobs:
+  close:
+    if: github.event.pull_request.user.login != github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr close "$PR" --repo "$REPO" --comment "Thank you! protolift does not accept outside code contributions (see CONTRIBUTING.md). Please open an issue for bugs or ideas instead."

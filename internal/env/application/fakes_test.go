@@ -6,7 +6,9 @@ package application
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,9 +41,41 @@ type fakeCloud struct {
 	*log
 	ready error
 	box   *domain.Box
+	noARM bool // the region offers no ARM types
 }
 
-func (f *fakeCloud) Region() string                           { return "us-east-1" }
+func (f *fakeCloud) Region() string   { return "us-east-1" }
+func (f *fakeCloud) Provider() string { return "fake" }
+
+// fakeTypes mirror a real catalog: arm and intel types per size.
+var fakeTypes = map[string][2]string{"S": {"a.s", "i.s"}, "M": {"a.m", "i.m"}, "L": {"a.l", "i.l"}, "XL": {"a.xl", "i.xl"}}
+
+func (f *fakeCloud) InstanceType(s domain.Size, a domain.Arch) string {
+	if a == domain.ArchIntel {
+		return fakeTypes[s.Name][1]
+	}
+	return fakeTypes[s.Name][0]
+}
+func (f *fakeCloud) SizeOf(t string) (domain.Size, domain.Arch, bool) {
+	for _, s := range domain.Sizes {
+		if fakeTypes[s.Name][0] == t {
+			return s, domain.ArchARM, true
+		}
+		if fakeTypes[s.Name][1] == t {
+			return s, domain.ArchIntel, true
+		}
+	}
+	return domain.Size{}, "", false
+}
+func (f *fakeCloud) Price(t string) domain.Price {
+	s, _, ok := f.SizeOf(t)
+	return domain.Price{USD: 0.04 * float64(s.CPU), Known: ok, Where: "example.com/pricing"}
+}
+func (f *fakeCloud) Supports(_ context.Context, t string) (bool, error) {
+	return !f.noARM || !strings.HasPrefix(t, "a."), nil
+}
+func (f *fakeCloud) HostName(b domain.Box) string             { return b.ID }
+func (f *fakeCloud) ProxyCommand(domain.Box, string) string   { return "proxy %h %p" }
 func (f *fakeCloud) Account(context.Context) (string, error)  { return "123456789012", nil }
 func (f *fakeCloud) Init(context.Context, func(string)) error { f.add("init"); return nil }
 func (f *fakeCloud) Ready(context.Context) error              { return f.ready }
@@ -109,6 +143,7 @@ func (f *fakeRemote) PutFile(_ context.Context, _ domain.Box, path string, data 
 func (f *fakeRemote) Attach(context.Context, domain.Box, string) error { return nil }
 func (f *fakeRemote) Forget(domain.Box) error                          { f.add("forget"); return nil }
 func (f *fakeRemote) Reset(context.Context, domain.Box) error          { f.add("reset"); return nil }
+func (f *fakeRemote) PublicKey(string) (string, error)                 { return "ssh-ed25519 AAAA test", nil }
 
 type fakeTunnel struct {
 	*log
@@ -140,7 +175,24 @@ type fakeStore struct {
 	hints   domain.StackHints
 	env     map[string][]byte
 	rec     *ports.EnvRecord
+	ledger  domain.Ledger
+	global  domain.Budget
 }
+
+func (f *fakeStore) ListEnvs() ([]ports.EnvRecord, error) {
+	if f.rec == nil {
+		return nil, nil
+	}
+	return []ports.EnvRecord{*f.rec}, nil
+}
+func (f *fakeStore) UpdateSettings(_, _ string, change func(*domain.Settings)) error {
+	change(&f.project.Settings)
+	return nil
+}
+func (f *fakeStore) LoadLedger() (domain.Ledger, error)     { return f.ledger, nil }
+func (f *fakeStore) SaveLedger(l domain.Ledger) error       { f.ledger = l; return nil }
+func (f *fakeStore) GlobalBudget() (domain.Budget, error)   { return f.global, nil }
+func (f *fakeStore) SaveGlobalBudget(b domain.Budget) error { f.global = b; return nil }
 
 func (f *fakeStore) LoadProject(context.Context, string, string) (domain.Project, error) {
 	return f.project, nil
@@ -166,8 +218,10 @@ func (f fakeImages) Support(context.Context, string) domain.ArchSupport { return
 // fakeScripts returns markers so fakeRemote can answer each kind of script.
 type fakeScripts struct{}
 
-func (fakeScripts) Boot(domain.Settings) string               { return "BOOT" }
-func (fakeScripts) IdleConfig(domain.Settings) []byte         { return []byte("IDLE") }
+func (fakeScripts) Boot(domain.Settings) string { return "BOOT" }
+func (fakeScripts) IdleConfig(_ domain.Settings, budget int) []byte {
+	return []byte(fmt.Sprintf("IDLE budget=%d", budget))
+}
 func (fakeScripts) IdleConfigPath() string                    { return "/etc/protolift/idle.conf" }
 func (fakeScripts) BootState() string                         { return "BOOTSTATE" }
 func (fakeScripts) SetupHash(domain.Folder) string            { return "HASH" }

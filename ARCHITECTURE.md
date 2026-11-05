@@ -4,7 +4,7 @@
 
 A developer's laptop cannot run their stack (CPU, memory or disk). They want the same stack in the
 cloud, used from the laptop exactly as before: same `localhost` ports, live code changes, no project
-edits, and a bill only from their own AWS account.
+edits, and a bill only from their own cloud account (AWS or Google Cloud), kept inside a budget.
 
 ## 2. Principles
 
@@ -31,6 +31,11 @@ edits, and a bill only from their own AWS account.
 ```
 
 ## 4. Layers (hexagonal, inside `internal/env`)
+
+Ways in (driving adapters), all through `env.Manager` only: the CLI (`cmd/protolift`), the MCP server
+(`internal/mcpserver`) and the local screen (`internal/webui`). Clouds are plug-ins: `ports.Cloud` owns
+everything cloud-specific (types, prices, tunnel command, key delivery), and `cmd/protolift/providers.go` lists
+the adapters (`awscloud`, `gcpcloud`).
 
 ```text
  cmd/protolift          composition root: flags, wiring, the hidden __proxy and ssh/scp shim
@@ -99,7 +104,12 @@ must not keep a box running.
 - Downloads (Mutagen) are pinned by SHA-256. A mismatch is refused.
 - CI fails if a private name, real account id or real instance id appears in the repository.
 
-## 9. Out of scope for v0.1
+## 9. Cost control
 
-Other clouds, Kubernetes, spot boxes, team sharing, a web dashboard. Each can be added as an adapter or a
-use case without changing the commands.
+A ledger on the laptop records each run (start, stop, hourly price), rebuilt from the cloud's own start and
+stop times. Budgets (project and total, daily and monthly) are checked before anything starts. The box is told
+how many minutes its budget pays for and stops itself, so the cap holds with the laptop closed. See docs/cost.md.
+
+## 10. Out of scope for v0.1
+
+Azure (parked: one adapter plus one registry entry), Kubernetes, spot boxes, team sharing.

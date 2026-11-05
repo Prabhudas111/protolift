@@ -20,6 +20,7 @@ mkdir -p "$STATE"
 num() { grep -E "^$1=[0-9]+$" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2; }
 IDLE_MINUTES=$(num IDLE_MINUTES); IDLE_MINUTES=${IDLE_MINUTES:-30}
 MAX_HOURS=$(num MAX_HOURS); MAX_HOURS=${MAX_HOURS:-12}
+BUDGET_MINUTES=$(num BUDGET_MINUTES); BUDGET_MINUTES=${BUDGET_MINUTES:-0}
 THRESHOLD_BYTES=65536
 STEP_MINUTES=5
 
@@ -30,6 +31,14 @@ if [ "$used_kb" -gt "$peak_kb" ]; then echo "$used_kb" > "$STATE/mem-peak-kb"; f
 chmod 644 "$STATE/mem-peak-kb" 2>/dev/null
 
 up_minutes=$(( $(cut -d. -f1 /proc/uptime) / 60 ))
+# The budget: protolift worked out how many minutes of this run the
+# remaining daily/monthly budget pays for. Enforced here, on the box, so it
+# holds even when the laptop is closed.
+if [ "$BUDGET_MINUTES" -gt 0 ] && [ "$up_minutes" -ge "$BUDGET_MINUTES" ]; then
+  logger -t protolift "budget reached after ${up_minutes} minutes: stopping"
+  shutdown -h now
+  exit 0
+fi
 if [ "$up_minutes" -ge $(( MAX_HOURS * 60 )) ]; then
   logger -t protolift "running for ${MAX_HOURS}h (max_hours): stopping"
   shutdown -h now

@@ -30,7 +30,10 @@ func TestBootRendersWithSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := s.Boot(domain.Settings{IdleMinutes: 45, MaxHours: 8})
-	for _, want := range []string{"IDLE_MINUTES=45", "MAX_HOURS=8", "protolift-idle.timer", "touch \"$STATE/ready\"", "/work"} {
+	if got := string(s.IdleConfig(domain.Settings{IdleMinutes: 30, MaxHours: 12}, 95)); !strings.Contains(got, "BUDGET_MINUTES=95") {
+		t.Fatalf("idle config = %q", got)
+	}
+	for _, want := range []string{"IDLE_MINUTES=45", "MAX_HOURS=8", "BUDGET_MINUTES=0", "protolift-idle.timer", "touch \"$STATE/ready\"", "/work"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("boot script missing %q", want)
 		}

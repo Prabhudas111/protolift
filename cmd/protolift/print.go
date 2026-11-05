@@ -66,3 +66,23 @@ func printList(w io.Writer, boxes []env.Box) {
 	}
 	tw.Flush()
 }
+
+func money(v float64) string { return fmt.Sprintf("$%.2f", v) }
+
+func capText(v float64) string {
+	if v <= 0 {
+		return "no cap"
+	}
+	return money(v)
+}
+
+func printCost(w io.Writer, r env.CostReport) {
+	tw := tabwriter.NewWriter(w, 0, 2, 2, ' ', 0)
+	fmt.Fprintln(tw, "PROJECT\tCLOUD\tTODAY\tMONTH\tDAILY CAP\tMONTHLY CAP")
+	for _, l := range r.Lines {
+		fmt.Fprintf(tw, "%s\t%s %s\t%s\t%s\t%s\t%s\n", l.Name, l.Provider, l.Region, money(l.Today), money(l.Month), capText(l.Budget.DailyUSD), capText(l.Budget.MonthlyUSD))
+	}
+	fmt.Fprintf(tw, "TOTAL\t\t%s\t%s\t%s\t%s\n", money(r.Today), money(r.Month), capText(r.Global.DailyUSD), capText(r.Global.MonthlyUSD))
+	tw.Flush()
+	fmt.Fprintln(w, r.Note)
+}

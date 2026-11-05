@@ -67,12 +67,8 @@ func state(s string) domain.BoxState {
 
 // ListBoxes returns protolift VMs in the region. envID "" means all.
 func (c *Cloud) ListBoxes(ctx context.Context, envID string) ([]domain.Box, error) {
-	filter := "labels." + LabelManaged + "=true AND zone~^" + c.region + "-"
-	if envID != "" {
-		filter += " AND labels." + LabelEnv + "=" + envID
-	}
 	var list []instance
-	if err := c.run(ctx, callTimeout, &list, "compute", "instances", "list", "--filter", filter); err != nil {
+	if err := c.run(ctx, callTimeout, &list, "compute", "instances", "list", "--filter", c.listFilter(envID)); err != nil {
 		return nil, err
 	}
 	boxes := make([]domain.Box, 0, len(list))
@@ -81,6 +77,17 @@ func (c *Cloud) ListBoxes(ctx context.Context, envID string) ([]domain.Box, erro
 	}
 	sort.Slice(boxes, func(i, j int) bool { return boxes[i].Name < boxes[j].Name })
 	return boxes, nil
+}
+
+// listFilter selects protolift VMs in the region. An instance's zone is a
+// full URL (…/zones/us-central1-a), so it matches "/zones/<region>-" inside
+// it, not the start of the string.
+func (c *Cloud) listFilter(envID string) string {
+	f := "labels." + LabelManaged + "=true AND zone~/zones/" + c.region + "-"
+	if envID != "" {
+		f += " AND labels." + LabelEnv + "=" + envID
+	}
+	return f
 }
 
 // FindBox returns the env's box; two for one env is a CONFLICT to resolve.

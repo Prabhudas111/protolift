@@ -19,7 +19,7 @@ func (s *Service) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s.d.UI.Step(fmt.Sprintf("setting up AWS account %s in %s (safe to run again)", acct, s.d.Cloud.Region()))
+	s.d.UI.Step(fmt.Sprintf("setting up %s: %s in %s (safe to run again)", s.d.Cloud.Provider(), acct, s.d.Cloud.Region()))
 	if err := s.d.Cloud.Init(ctx, s.d.UI.Info); err != nil {
 		return err
 	}
@@ -119,13 +119,13 @@ func (s *Service) Down(ctx context.Context, t Target) error {
 	if err := s.d.Store.RemoveEnv(p.ID); err != nil {
 		return err
 	}
-	s.d.UI.Step("deleted. Nothing of this project is left in AWS")
+	s.d.UI.Step("deleted. Nothing of this project is left in " + s.d.Cloud.Provider())
 	return nil
 }
 
 // Uninstall removes the account pieces made by Init.
 func (s *Service) Uninstall(ctx context.Context) error {
-	if !s.d.UI.Confirm(fmt.Sprintf("Remove protolift's access role and firewall group from %s?", s.d.Cloud.Region())) {
+	if !s.d.UI.Confirm(fmt.Sprintf("Remove protolift's one-time setup (access and firewall) from %s %s?", s.d.Cloud.Provider(), s.d.Cloud.Region())) {
 		return errs.New(errs.CodeCancelled, "nothing was removed", "")
 	}
 	if err := s.d.Cloud.Uninstall(ctx, s.d.UI.Info); err != nil {

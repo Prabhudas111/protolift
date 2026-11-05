@@ -61,7 +61,7 @@ func (s *Service) allowance(p domain.Project, price domain.Price) (domain.Allowa
 	}
 	hasBudget := p.Settings.Budget != (domain.Budget{}) || global != (domain.Budget{})
 	if hasBudget && !price.Known {
-		s.d.UI.Warn("the budget cannot stop this box: protolift has no price for its type here (" + price.Text() + "); idle stop and max_hours still apply")
+		s.d.UI.Warn("the budget cannot stop this box: protolift has no price for its type here (" + price.Text() + "). Idle stop and max_hours still apply")
 	}
 	return a, nil
 }
@@ -124,7 +124,7 @@ func (s *Service) Cost(ctx context.Context) (CostReport, error) {
 	if err != nil {
 		return CostReport{}, err
 	}
-	r := CostReport{Global: global, Note: "Estimates from running time × list price; your cloud bill is the real amount."}
+	r := CostReport{Global: global, Note: "Estimates from running time × list price. Your cloud bill is the real amount."}
 	for _, e := range envs {
 		sp := s.spent(l, e.ID)
 		line := CostLine{Name: e.Name, Dir: e.Dir, EnvName: e.EnvName, Provider: e.Provider, Region: e.Region, Today: sp.Today, Month: sp.Month}

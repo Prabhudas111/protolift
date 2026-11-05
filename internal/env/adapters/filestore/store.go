@@ -166,7 +166,7 @@ func (s *Store) EnvFiles(f domain.Folder) (map[string][]byte, error) {
 			return nil, errs.Wrap(errs.CodeInternal, err, "cannot read "+n, "")
 		}
 		if info.Size() > maxEnvFile {
-			return nil, errs.New(errs.CodeInvalidInput, n+" is larger than 1 MB", "env files should hold settings only; use --no-env to skip them")
+			return nil, errs.New(errs.CodeInvalidInput, n+" is larger than 1 MB", "env files should hold settings only. Use --no-env to skip them")
 		}
 		b, err := os.ReadFile(filepath.Join(f.LocalPath, n))
 		if err != nil {
@@ -215,7 +215,7 @@ func (s *Store) LoadEnv(id string) (ports.EnvRecord, bool, error) {
 	}
 	var r ports.EnvRecord
 	if err := json.Unmarshal(b, &r); err != nil {
-		return ports.EnvRecord{}, false, errs.Wrap(errs.CodeInternal, err, p+" is damaged", "delete it; `protolift up` rebuilds it from AWS")
+		return ports.EnvRecord{}, false, errs.Wrap(errs.CodeInternal, err, p+" is damaged", "delete it. `protolift up` rebuilds it from AWS")
 	}
 	return r, true, nil
 }

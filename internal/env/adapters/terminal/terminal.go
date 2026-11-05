@@ -66,7 +66,7 @@ func (u *UI) Confirm(question string) bool {
 		return true
 	}
 	if !u.TTY {
-		u.line("! ", question+" no terminal to answer; run with --yes to agree from a script")
+		u.line("! ", question+" no terminal to answer. Run with --yes to agree from a script")
 		return false
 	}
 	u.mu.Lock()

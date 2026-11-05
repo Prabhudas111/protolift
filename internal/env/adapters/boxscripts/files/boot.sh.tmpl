@@ -8,7 +8,7 @@
 # stops waiting and shows this log.
 set -uo pipefail
 STATE=/var/lib/protolift
-# Some clouds (Compute Engine) run the startup script on every boot; a box
+# Some clouds (Compute Engine) run the startup script on every boot. A box
 # that is already prepared has nothing to do.
 [ -f "$STATE/ready" ] && exit 0
 mkdir -p "$STATE" /etc/protolift
@@ -20,7 +20,7 @@ echo "protolift boot started $(date -u +%FT%TZ)"
 fail() { echo "FAILED: $1"; echo "$1" > "$STATE/failed"; exit 1; }
 retry() { local i; for i in 1 2 3 4 5; do "$@" && return 0; echo "retry $i: $*"; sleep $((i * 5)); done; return 1; }
 
-# The box user. AWS images ship it; on other clouds it may not exist yet.
+# The box user. AWS images ship it. On other clouds it may not exist yet.
 if ! id {{.User}} >/dev/null 2>&1; then
   useradd -m -s /bin/bash {{.User}} || fail "could not create the {{.User}} user"
 fi

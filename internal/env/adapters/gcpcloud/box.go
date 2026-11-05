@@ -52,7 +52,7 @@ func (c *Cloud) toBox(i instance) domain.Box {
 }
 
 // state maps Compute Engine status to protolift words. A stopped VM is
-// TERMINATED in Compute Engine terms; its disk is kept.
+// TERMINATED in Compute Engine terms. Its disk is kept.
 func state(s string) domain.BoxState {
 	switch s {
 	case "RUNNING":
@@ -90,7 +90,7 @@ func (c *Cloud) listFilter(envID string) string {
 	return f
 }
 
-// FindBox returns the env's box; two for one env is a CONFLICT to resolve.
+// FindBox returns the env's box. Two for one env is a CONFLICT to resolve.
 func (c *Cloud) FindBox(ctx context.Context, envID string) (domain.Box, bool, error) {
 	boxes, err := c.ListBoxes(ctx, envID)
 	if err != nil || len(boxes) == 0 {
@@ -193,7 +193,7 @@ func (c *Cloud) DeleteBox(ctx context.Context, b domain.Box) error {
 	return err
 }
 
-// ResizeBox stops the VM and changes its machine type; the disk stays.
+// ResizeBox stops the VM and changes its machine type. The disk stays.
 func (c *Cloud) ResizeBox(ctx context.Context, b domain.Box, instanceType string) error {
 	if err := c.StopBox(ctx, b); err != nil {
 		return err
@@ -211,7 +211,7 @@ func (c *Cloud) WaitReachable(ctx context.Context, b domain.Box, log func(string
 			return err
 		}
 		if i.Status == "RUNNING" {
-			log("box running; Google's private tunnel (IAP) is ready")
+			log("box running. Google's private tunnel (IAP) is ready")
 			return nil
 		}
 		select {
@@ -223,7 +223,7 @@ func (c *Cloud) WaitReachable(ctx context.Context, b domain.Box, log func(string
 	return errs.New(errs.CodeTimeout, "the box did not start within 10 minutes", "check the VM in the Google Cloud console")
 }
 
-// HostName: ssh's HostName is the VM name; IAP resolves it in the zone.
+// HostName: ssh's HostName is the VM name. IAP resolves it in the zone.
 func (c *Cloud) HostName(b domain.Box) string { return b.ID }
 
 // ProxyCommand opens Google's IAP tunnel to the VM's ssh port. gcloud is

@@ -89,7 +89,7 @@ func (s *Service) Up(ctx context.Context, r UpRequest) error {
 }
 
 // ensureBox finds, wakes or creates the box. A new box is confirmed with
-// its size and price first; nothing is billed without a yes, and nothing
+// its size and price first. Nothing is billed without a yes, and nothing
 // starts when a budget is used up.
 func (s *Service) ensureBox(ctx context.Context, p domain.Project, r UpRequest, rec *ports.EnvRecord) (domain.Box, domain.Allowance, error) {
 	var none domain.Allowance
@@ -104,14 +104,14 @@ func (s *Service) ensureBox(ctx context.Context, p domain.Project, r UpRequest, 
 		allow, err := s.allowance(p, s.d.Cloud.Price(b.InstanceType))
 		if err != nil {
 			if b.State == domain.BoxRunning {
-				return b, none, errs.Wrap(errs.CodeBudget, err, errs.As(err).Message+"; the box is still running",
+				return b, none, errs.Wrap(errs.CodeBudget, err, errs.As(err).Message+". The box is still running",
 					"run `protolift stop` now (it also stops itself within 5 minutes), or raise the budget")
 			}
 			return b, none, err
 		}
 		if r.Size != "" {
 			if want, err := domain.SizeByName(r.Size); err == nil && s.d.Cloud.InstanceType(want, b.Arch) != b.InstanceType {
-				s.d.UI.Warn(fmt.Sprintf("this box is %s; to change it run `protolift resize %s`", b.InstanceType, want.Name))
+				s.d.UI.Warn(fmt.Sprintf("this box is %s. To change it run `protolift resize %s`", b.InstanceType, want.Name))
 			}
 		}
 		if b.State != domain.BoxRunning {
@@ -173,7 +173,7 @@ func (s *Service) ensureBox(ctx context.Context, p domain.Project, r UpRequest, 
 
 // offeredType maps the size and chip to the cloud's type and checks the
 // region offers it. ARM chosen by detection falls back to Intel when the
-// region has no ARM type; a chip the user asked for never changes silently.
+// region has no ARM type. A chip the user asked for never changes silently.
 func (s *Service) offeredType(ctx context.Context, size domain.Size, arch domain.Arch, why string, userChose bool) (string, domain.Arch, string, error) {
 	itype := s.d.Cloud.InstanceType(size, arch)
 	ok, err := s.d.Cloud.Supports(ctx, itype)
@@ -239,7 +239,7 @@ func (s *Service) chooseSize(p domain.Project, flag string) (domain.Size, string
 	}
 	gb := domain.EstimateMemoryGB(h)
 	sz := domain.SmallestFitting(gb)
-	return sz, fmt.Sprintf("%s (your stack needs about %.0f GB; change with --size)", sz, gb), nil
+	return sz, fmt.Sprintf("%s (your stack needs about %.0f GB. Change with --size)", sz, gb), nil
 }
 
 // waitBooted waits for the first-boot script and reports its log on failure.
@@ -276,7 +276,7 @@ func (s *Service) waitBooted(ctx context.Context, b domain.Box) error {
 				return s.d.Remote.Reset(ctx, b)
 			case "failed":
 				return errs.New(errs.CodeRemoteFailed, "preparing the box failed:\n"+log,
-					"run `protolift down` and `protolift up` to start fresh; if it fails again, report the log above")
+					"run `protolift down` and `protolift up` to start fresh. If it fails again, report the log above")
 			}
 			if !announced {
 				s.d.UI.Step("installing Docker and tools on the new box (about 2-3 minutes, only the first time)")

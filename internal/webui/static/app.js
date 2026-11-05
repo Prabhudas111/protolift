@@ -104,7 +104,7 @@ async function refresh() {
     if (list.contains(document.activeElement)) return; // do not redraw while typing
     list.replaceChildren(...(s.projects.length
       ? s.projects.map(card)
-      : [el("div", { class: "panel" }, "No projects yet. Run `protolift up` in a project folder; it appears here.")]));
+      : [el("div", { class: "panel" }, "No projects yet. Run `protolift up` in a project folder. It appears here.")]));
   } catch (e) {
     $("totals").textContent = e.message;
   }

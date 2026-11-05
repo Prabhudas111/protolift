@@ -47,7 +47,7 @@ func TestConfigHasProxyKeyAndNoOpenHostKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("private key must exist: %v", err)
 	}
-	// Unix permission bits only exist on unix; Windows protects the file
+	// Unix permission bits only exist on unix. Windows protects the file
 	// through the user profile's ACL instead.
 	if runtime.GOOS != "windows" && st.Mode().Perm()&0o077 != 0 {
 		t.Fatalf("private key must be owner-only, got %v", st.Mode().Perm())

@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 	for in, want := range cases {
 		got, err := Parse(in)
 		if err != nil || got != want {
-			t.Fatalf("Parse(%q) = %+v, %v; want %+v", in, got, err, want)
+			t.Fatalf("Parse(%q) = %+v, %v. Want %+v", in, got, err, want)
 		}
 	}
 	if _, err := Parse("${IMAGE}:dev"); err == nil {

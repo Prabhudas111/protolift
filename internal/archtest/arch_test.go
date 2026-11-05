@@ -63,7 +63,7 @@ var rules = []rule{
 	{"cmd/", []string{"internal/"}, true},
 }
 
-// matches: a name ending in "/" covers that whole folder; any other name is
+// matches: a name ending in "/" covers that whole folder. Any other name is
 // exactly one package. So "internal/env" never covers internal/env/adapters.
 func matches(pkg, pattern string) bool {
 	if strings.HasSuffix(pattern, "/") {
@@ -98,7 +98,7 @@ func TestLayerImports(t *testing.T) {
 		rel := filepath.ToSlash(filepath.Dir(relFile))
 		r, ok := ruleFor(rel)
 		if !ok {
-			t.Errorf("%s is in a folder with no layer rule; add one in arch_test.go", relFile)
+			t.Errorf("%s is in a folder with no layer rule. Add one in arch_test.go", relFile)
 			return nil
 		}
 		f, err := parser.ParseFile(fset, p, nil, parser.ImportsOnly)
@@ -122,7 +122,7 @@ func TestLayerImports(t *testing.T) {
 				}
 			case strings.Contains(strings.SplitN(path, "/", 2)[0], "."):
 				if !r.thirdParty && !strings.HasSuffix(relFile, "_test.go") {
-					t.Errorf("%s imports third-party %s; only adapters and cmd may", relFile, path)
+					t.Errorf("%s imports third-party %s. Only adapters and cmd may", relFile, path)
 				}
 			}
 		}
@@ -197,18 +197,18 @@ func TestNoPrivateNames(t *testing.T) {
 			parts := append([]string{w}, strings.Split(w, "-")...)
 			for _, part := range parts {
 				if banned[fingerprint(part)] {
-					t.Errorf("%s contains a private name (fingerprint %s…); remove it", rel, fingerprint(part)[:8])
+					t.Errorf("%s contains a private name (fingerprint %s…). Remove it", rel, fingerprint(part)[:8])
 				}
 			}
 		}
 		for _, m := range accountID.FindAllString(text, -1) {
 			if m != placeholderAccount && !strings.HasSuffix(rel, "go.sum") {
-				t.Errorf("%s contains what looks like an AWS account id (%s…); use %s in examples", rel, m[:4], placeholderAccount)
+				t.Errorf("%s contains what looks like an AWS account id (%s…). Use %s in examples", rel, m[:4], placeholderAccount)
 			}
 		}
 		for _, m := range instanceID.FindAllString(text, -1) {
 			if m != placeholderInstance {
-				t.Errorf("%s contains a real-looking instance id; use %s in examples", rel, placeholderInstance)
+				t.Errorf("%s contains a real-looking instance id. Use %s in examples", rel, placeholderInstance)
 			}
 		}
 		return nil
@@ -226,4 +226,48 @@ func isBinary(b []byte) bool {
 		}
 	}
 	return false
+}
+
+// TestDocsUsePlainSentences keeps the docs readable: clauses are separate
+// sentences, never joined with semicolons. Code blocks and inline code are
+// exempt, since code uses semicolons for real.
+func TestDocsUsePlainSentences(t *testing.T) {
+	root := repoRoot(t)
+	semi := regexp.MustCompile(`[A-Za-z0-9)]\s*;(\s|$)`)
+	inlineCode := regexp.MustCompile("`[^`]*`")
+	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && (d.Name() == ".git" || d.Name() == "dist") {
+			return filepath.SkipDir
+		}
+		if d.IsDir() || !strings.HasSuffix(p, ".md") {
+			return nil
+		}
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(root, p)
+		fence := false
+		for i, line := range strings.Split(string(raw), "\n") {
+			if strings.HasPrefix(strings.TrimSpace(line), "```") {
+				fence = !fence
+				continue
+			}
+			if fence {
+				continue
+			}
+			// Inline code becomes a placeholder word, so "`a`; b" is still
+			// caught while semicolons inside the code itself are not.
+			if semi.MatchString(inlineCode.ReplaceAllString(line, "code")) {
+				t.Errorf("%s:%d joins clauses with a semicolon. Write two sentences instead", rel, i+1)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }

@@ -4,7 +4,7 @@
 // Package sshremote implements ports.Remote and ports.Tunnel with the
 // system OpenSSH client. The connection goes through AWS Systems Manager
 // (the ProxyCommand is protolift itself), so the box needs no open port.
-// Keys are per env; the box only ever holds them for 60 seconds.
+// Keys are per env. The box only ever holds them for 60 seconds.
 package sshremote
 
 import (
@@ -77,7 +77,7 @@ func FindSSH() (string, error) {
 // New checks the options and prepares protolift's ssh folder.
 func New(o Options) (*Remote, error) {
 	if o.Root == "" || o.SSH == "" || o.Router == nil {
-		return nil, errs.New(errs.CodeInternal, "ssh adapter wired without root, ssh path or cloud router", "this is a bug; please report it")
+		return nil, errs.New(errs.CodeInternal, "ssh adapter wired without root, ssh path or cloud router", "this is a bug. Please report it")
 	}
 	if err := os.MkdirAll(filepath.Join(o.Root, "ssh", "envs"), 0o700); err != nil {
 		return nil, errs.Wrap(errs.CodeInternal, err, "cannot create the ssh folder", "")
@@ -86,7 +86,7 @@ func New(o Options) (*Remote, error) {
 }
 
 // ConfigPath is the ssh config protolift passes with -F. It includes one
-// file per box; protolift never edits the user's own ~/.ssh/config.
+// file per box. The protolift never edits the user's own ~/.ssh/config.
 func (r *Remote) ConfigPath() string { return filepath.Join(r.o.Root, "ssh", "config") }
 
 // Alias is the ssh host name of a box.
@@ -215,7 +215,7 @@ func (r *Remote) explain(err error, stderr string) error {
 	var ee *exec.ExitError
 	if errors.As(err, &ee) && ee.ExitCode() == 255 {
 		return errs.Wrap(errs.CodeNetwork, err, "could not connect to the box: "+tail,
-			"check your internet and AWS login (`aws sso login`); the box may still be starting, so try again in a minute")
+			"check your internet and AWS login (`aws sso login`). The box may still be starting, so try again in a minute")
 	}
 	if tail == "" {
 		tail = err.Error()

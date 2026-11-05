@@ -123,7 +123,7 @@ func verify(path, want string) error {
 	}
 	if got := hex.EncodeToString(h.Sum(nil)); got != want {
 		return errs.New(errs.CodeInternal, "the file-sync download does not match its checksum, so it was not used",
-			"try again; if it keeps failing, report it (someone may be tampering with the download)")
+			"try again. If it keeps failing, report it (someone may be tampering with the download)")
 	}
 	return nil
 }

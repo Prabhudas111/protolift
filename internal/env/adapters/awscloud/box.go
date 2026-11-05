@@ -97,7 +97,7 @@ func stopTime(reason string) time.Time {
 	return t.UTC()
 }
 
-// FindBox returns the env's box; two boxes for one env is a CONFLICT the
+// FindBox returns the env's box. Two boxes for one env is a CONFLICT the
 // user must resolve, never something protolift guesses about.
 func (c *Cloud) FindBox(ctx context.Context, envID string) (domain.Box, bool, error) {
 	boxes, err := c.ListBoxes(ctx, envID)
@@ -224,7 +224,7 @@ func (c *Cloud) putIdleAlarm(ctx context.Context, b domain.Box) error {
 	return translate(err, "create the idle-stop alarm")
 }
 
-// StartBox starts a stopped box; a running box is left alone.
+// StartBox starts a stopped box. A running box is left alone.
 func (c *Cloud) StartBox(ctx context.Context, b domain.Box) error {
 	switch b.State {
 	case domain.BoxRunning, domain.BoxPending:
@@ -260,7 +260,7 @@ func (c *Cloud) DeleteBox(ctx context.Context, b domain.Box) error {
 	return translate(ec2.NewInstanceTerminatedWaiter(c.ec2).Wait(ctx, &ec2.DescribeInstancesInput{InstanceIds: []string{b.ID}}, waitTerminate), "wait for the box to be deleted")
 }
 
-// ResizeBox stops the box and changes its type; the disk is kept.
+// ResizeBox stops the box and changes its type. The disk is kept.
 func (c *Cloud) ResizeBox(ctx context.Context, b domain.Box, instanceType string) error {
 	if err := c.StopBox(ctx, b); err != nil {
 		return err
@@ -276,7 +276,7 @@ func (c *Cloud) WaitReachable(ctx context.Context, b domain.Box, log func(string
 	if err := ec2.NewInstanceRunningWaiter(c.ec2).Wait(ctx, &ec2.DescribeInstancesInput{InstanceIds: []string{b.ID}}, waitStart); err != nil {
 		return translate(err, "wait for the box to start")
 	}
-	log("box running; waiting for the private tunnel")
+	log("box running. Waiting for the private tunnel")
 	deadline := time.Now().Add(waitSSM)
 	for time.Now().Before(deadline) {
 		out, err := c.ssm.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{
@@ -295,5 +295,5 @@ func (c *Cloud) WaitReachable(ctx context.Context, b domain.Box, log func(string
 		}
 	}
 	return errs.New(errs.CodeTimeout, "the box runs, but AWS Systems Manager could not reach it within 10 minutes",
-		"the box needs outbound HTTPS to AWS; run `protolift init` again, then `protolift up`")
+		"the box needs outbound HTTPS to AWS. Run `protolift init` again, then `protolift up`")
 }

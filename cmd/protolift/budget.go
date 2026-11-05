@@ -13,7 +13,7 @@ import (
 )
 
 // setBudget is `protolift budget --daily N --monthly N [--all]`. A flag left
-// out keeps its current value; 0 removes that cap.
+// out keeps its current value. 0 removes that cap.
 func setBudget(ctx context.Context, m *env.Manager, t env.Target, o opts, w io.Writer) error {
 	if o.daily < 0 && o.monthly < 0 {
 		return errs.New(errs.CodeInvalidInput, "budget needs --daily and/or --monthly", "for example: protolift budget --daily 5 --monthly 60 (add --all for every project together)")

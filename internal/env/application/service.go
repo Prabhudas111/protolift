@@ -3,7 +3,7 @@
 
 // Package application holds the use cases: init, up, status, stop, resize,
 // down, uninstall, config, ssh and logs. Each use case owns the order of
-// steps and the policy; the ports do the work. No use case imports a
+// steps and the policy. The ports do the work. No use case imports a
 // provider SDK.
 package application
 
@@ -59,7 +59,7 @@ func New(d Deps) (*Service, error) {
 		}
 	}
 	if len(missing) > 0 {
-		return nil, errs.New(errs.CodeInternal, fmt.Sprintf("protolift is wired without %v", missing), "this is a bug; please report it")
+		return nil, errs.New(errs.CodeInternal, fmt.Sprintf("protolift is wired without %v", missing), "this is a bug. Please report it")
 	}
 	return &Service{d: d}, nil
 }
@@ -113,7 +113,7 @@ func step(ctx context.Context, limit time.Duration, name string, fn func(ctx con
 	err := fn(c)
 	if err != nil && errs.CodeOf(err) == errs.CodeTimeout && ctx.Err() == nil {
 		return errs.Wrap(errs.CodeTimeout, err, fmt.Sprintf("%s took longer than %s", name, limit),
-			"check your internet connection; run `protolift logs` or `protolift ssh` to look at the box")
+			"check your internet connection. Run `protolift logs` or `protolift ssh` to look at the box")
 	}
 	return err
 }

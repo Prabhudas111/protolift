@@ -66,7 +66,7 @@ type BoxSpec struct {
 	Arch         domain.Arch
 	BootScript   string
 	// PubKey is the env's ssh public key. Clouds that push a short-lived key
-	// per connection (AWS) ignore it; clouds that place it at create time
+	// per connection (AWS) ignore it. Clouds that place it at create time
 	// (GCP instance metadata) use it.
 	PubKey string
 	// MaxHours is the hard run limit for clouds that can enforce it outside
@@ -175,14 +175,14 @@ type UI interface {
 	Step(msg string)
 	Info(msg string)
 	Warn(msg string)
-	// Confirm asks yes/no. With --yes it returns true without asking; with
+	// Confirm asks yes/no. With --yes it returns true without asking. With
 	// no terminal attached it returns false.
 	Confirm(question string) bool
 	Out() io.Writer
 }
 
 // Scripts writes the bash that runs on the box. The application decides
-// what runs and in which order; this port decides how bash spells it.
+// what runs and in which order. This port decides how bash spells it.
 type Scripts interface {
 	// Boot is the first-start script (packages, idle stop, ready marker).
 	Boot(s domain.Settings) string

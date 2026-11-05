@@ -24,7 +24,7 @@ func TestLedgerObservesRunsFromCloudTimes(t *testing.T) {
 	if len(l.Runs) != 1 {
 		t.Fatalf("runs = %+v", l.Runs)
 	}
-	// The box stopped itself at 11:00 while the laptop was off; seen at 15:00.
+	// The box stopped itself at 11:00 while the laptop was off. Seen at 15:00.
 	box.State = BoxStopped
 	l.Observe(box, price, t0.Add(2*time.Hour), t0.Add(6*time.Hour))
 	if !l.Runs[0].End.Equal(t0.Add(2 * time.Hour)) {
@@ -68,7 +68,7 @@ func TestAllowTightestBudgetWins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// project: $1 left = 120 min; global: $0.25 left = 30 min.
+	// project: $1 left = 120 min. Global: $0.25 left = 30 min.
 	if a.Unlimited || a.Minutes != 30 || a.Limit != "your total monthly budget" {
 		t.Fatalf("allowance = %+v", a)
 	}

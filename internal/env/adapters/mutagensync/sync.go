@@ -3,7 +3,7 @@
 
 // Package mutagensync implements ports.Sync with Mutagen, run as a private
 // copy: its own data folder and daemon, so it never touches a Mutagen the
-// user already has. Sessions are labelled with the env id; every command
+// user already has. Sessions are labelled with the env id. Every command
 // selects by that label, never by guessing names.
 package mutagensync
 
@@ -76,7 +76,7 @@ func New(ctx context.Context, o Options) (*Sync, error) {
 }
 
 // dataDir keeps Mutagen's state under protolift's home unless the daemon
-// socket path would pass the OS limit; then it uses the short private
+// socket path would pass the OS limit. Then it uses the short private
 // folder. Sessions there are recreated by Ensure after a reboot clears /tmp.
 func dataDir(root string) (string, error) {
 	home := filepath.Join(root, "mutagen")
@@ -105,7 +105,7 @@ func (s *Sync) run(ctx context.Context, timeout time.Duration, args ...string) (
 		if msg == "" {
 			msg = err.Error()
 		}
-		return "", errs.Wrap(errs.CodeRemoteFailed, err, "file sync failed: "+msg, "run `protolift status`; if it repeats, `protolift down` and `protolift up` start fresh")
+		return "", errs.Wrap(errs.CodeRemoteFailed, err, "file sync failed: "+msg, "run `protolift status`. If it repeats, `protolift down` and `protolift up` start fresh")
 	}
 	return out.String(), nil
 }

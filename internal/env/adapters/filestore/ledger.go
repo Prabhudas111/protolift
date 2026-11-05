@@ -33,7 +33,7 @@ func writeAtomic(path string, data []byte) error {
 
 func (s *Store) ledgerPath() string { return filepath.Join(s.Root, "ledger.json") }
 
-// LoadLedger reads the running-time record; none yet is an empty ledger.
+// LoadLedger reads the running-time record. None yet is an empty ledger.
 func (s *Store) LoadLedger() (domain.Ledger, error) {
 	var l domain.Ledger
 	b, err := os.ReadFile(s.ledgerPath())
@@ -44,7 +44,7 @@ func (s *Store) LoadLedger() (domain.Ledger, error) {
 		return l, errs.Wrap(errs.CodeInternal, err, "cannot read the cost ledger", "")
 	}
 	if err := json.Unmarshal(b, &l); err != nil {
-		return l, errs.Wrap(errs.CodeInternal, err, "the cost ledger is damaged", "delete "+s.ledgerPath()+"; protolift starts a new one")
+		return l, errs.Wrap(errs.CodeInternal, err, "the cost ledger is damaged", "delete "+s.ledgerPath()+". A new one starts on the next run")
 	}
 	return l, nil
 }

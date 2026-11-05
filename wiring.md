@@ -6,6 +6,19 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 
 ---
 
+## [2026-11-05 23:30] GCP live-tested; list filter and wording fixed
+
+**Symptom:** GCP live test in a real project: the second `up` tried to create the box again ("already exists"), and messages said "AWS" on Google Cloud.
+**Root cause:** `gcpcloud.ListBoxes` filtered `zone~^<region>-`, but an instance's `zone` is a full URL (…/zones/asia-south1-a), so it never matched and FindBox saw no box. Machine-type listings return plain zone names, which is why Supports worked. Init/Down/Uninstall messages had AWS words in the use cases.
+**Fix:** `listFilter` matches `/zones/<region>-` inside the URL (tested). Messages use `Cloud.Provider()`. GCP prices come from the Cloud Billing Catalog (33,567 SKUs, vCPU+RAM per region).
+**Files touched:** internal/env/adapters/gcpcloud/{box.go,catalog.go,gcp_test.go}, internal/env/application/lifecycle.go
+**Wiring mapped:** `listFilter` ← ListBoxes ← FindBox/Uninstall (gcpcloud only). Messages are only in application/lifecycle.go.
+**Blast radius:** low (one adapter, three strings).
+**Tests run:** go test ./... green · GCP live (project with an existing default network, asia-south1): init 22 s; up 278 s on n2-standard-2 with ARM → Intel fallback (no T2A in asia-south1); mirror through IAP, edit → visible median 0.22 s (10/10); VM has no service account, max run 12 h → STOP, project ssh keys blocked; firewall tcp:22 from 35.235.240.0/20 only; stop 53 s, wake 41 s; down 55 s; uninstall left 0 instances, disks and firewall rules.
+**Regression risks:** any new gcloud `--filter` on instances must treat `zone` as a URL. A new region needs Billing Catalog prices, or the budget stop is off there (protolift warns).
+
+---
+
 ## [2026-11-05 22:00] multi-cloud, cost, MCP, local screen — v0.1.0 scope
 
 **Symptom:** v0.1 was AWS-only with no spend caps and no way for AI agents or a screen to drive it. The founder froze v0.1 scope as: AWS+GCP plug-ins, MCP, cost control, local UI, skill, no outside collaborators.

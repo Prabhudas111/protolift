@@ -1,0 +1,92 @@
+#!/bin/bash
+# Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
+# SPDX-License-Identifier: Apache-2.0
+#
+# protolift first boot. Runs once, as root, from cloud-init. It installs
+# Docker and common toolchains, the idle stop, and writes a ready marker.
+# On any failure it writes /var/lib/protolift/failed so `protolift up`
+# stops waiting and shows this log.
+set -uo pipefail
+STATE=/var/lib/protolift
+mkdir -p "$STATE" /etc/protolift
+chmod 755 "$STATE"
+LOG="$STATE/boot.log"
+exec >>"$LOG" 2>&1
+echo "protolift boot started $(date -u +%FT%TZ)"
+
+fail() { echo "FAILED: $1"; echo "$1" > "$STATE/failed"; exit 1; }
+retry() { local i; for i in 1 2 3 4 5; do "$@" && return 0; echo "retry $i: $*"; sleep $((i * 5)); done; return 1; }
+
+export DEBIAN_FRONTEND=noninteractive
+retry apt-get update -y || fail "could not update the package list"
+retry apt-get install -y --no-install-recommends \
+  docker.io docker-compose-v2 docker-buildx git make build-essential curl unzip jq ca-certificates \
+  || fail "could not install Docker and tools"
+systemctl enable --now docker || fail "could not start Docker"
+usermod -aG docker {{.User}}
+
+case "$(uname -m)" in
+  aarch64) NODE_ARCH=arm64; GO_ARCH=arm64 ;;
+  x86_64)  NODE_ARCH=x64;   GO_ARCH=amd64 ;;
+  *) fail "unknown CPU $(uname -m)" ;;
+esac
+
+# Node.js: the newest LTS release, from nodejs.org.
+NODE_VER=$(retry curl -fsSL --max-time 30 https://nodejs.org/dist/index.json | jq -r '[.[] | select(.lts != false)][0].version') \
+  || fail "could not find the Node.js LTS version"
+retry curl -fsSL --max-time 300 -o /tmp/node.tar.xz "https://nodejs.org/dist/${NODE_VER}/node-${NODE_VER}-linux-${NODE_ARCH}.tar.xz" \
+  || fail "could not download Node.js"
+mkdir -p /usr/local/node && tar -xJf /tmp/node.tar.xz -C /usr/local/node --strip-components=1 || fail "could not unpack Node.js"
+rm -f /tmp/node.tar.xz
+
+# Go: the newest stable release, from go.dev.
+GO_VER=$(retry curl -fsSL --max-time 30 'https://go.dev/VERSION?m=text' | head -1) || fail "could not find the Go version"
+retry curl -fsSL --max-time 300 -o /tmp/go.tgz "https://go.dev/dl/${GO_VER}.linux-${GO_ARCH}.tar.gz" || fail "could not download Go"
+rm -rf /usr/local/go && tar -xzf /tmp/go.tgz -C /usr/local || fail "could not unpack Go"
+rm -f /tmp/go.tgz
+
+cat > /etc/profile.d/protolift.sh <<'EOF'
+export PATH="/usr/local/node/bin:/usr/local/go/bin:$HOME/go/bin:$PATH"
+EOF
+
+# Many file watchers (dev servers) need more inotify slots than the default.
+cat > /etc/sysctl.d/90-protolift.conf <<'EOF'
+fs.inotify.max_user_watches=1048576
+fs.inotify.max_user_instances=8192
+EOF
+sysctl --system >/dev/null
+
+mkdir -p {{.WorkRoot}} && chown {{.User}}:{{.User}} {{.WorkRoot}}
+chown {{.User}}:{{.User}} /etc/protolift
+
+cat > /etc/protolift/idle.conf <<'EOF'
+{{.IdleConfig}}EOF
+chown {{.User}}:{{.User}} /etc/protolift/idle.conf
+
+cat > /usr/local/sbin/protolift-idle <<'EOF'
+{{.IdleScript}}EOF
+chmod 755 /usr/local/sbin/protolift-idle
+
+cat > /etc/systemd/system/protolift-idle.service <<'EOF'
+[Unit]
+Description=protolift idle stop
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/protolift-idle
+EOF
+
+cat > /etc/systemd/system/protolift-idle.timer <<'EOF'
+[Unit]
+Description=protolift idle check every 5 minutes
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+AccuracySec=30s
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now protolift-idle.timer || fail "could not start the idle stop"
+
+touch "$STATE/ready"
+echo "protolift boot finished $(date -u +%FT%TZ)"

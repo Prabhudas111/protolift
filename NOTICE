@@ -1,0 +1,18 @@
+protolift
+Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
+
+This product is created and maintained by Prabhudas Avanigadda,
+published by Proto.Engineer (https://www.proto-engineer.com).
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The names "protolift" and "Proto.Engineer" and their logos are not
+licensed under the Apache License. See TRADEMARKS.md.
+
+This product downloads, at run time and only with its pinned checksums,
+the following third-party programs. They are not part of this product
+and keep their own licenses:
+
+  Mutagen               https://github.com/mutagen-io/mutagen          MIT
+  AWS Session Manager   https://github.com/aws/session-manager-plugin  Apache-2.0
+  plugin (if missing; the user may also install it themselves)

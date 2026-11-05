@@ -6,6 +6,22 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 
 ---
 
+## [2026-11-05 21:45] README shows the flow and real screens
+
+**Symptom:** A reader could not see the setup order or what protolift looks like. The README had one text diagram and tables.
+**Root cause:** The repo had no pictures of the flow, the terminal output or the control screen.
+**Fix:** Added docs/images/setup-flow.svg (hand-drawn, own background so it reads in light and dark), docs/images/protolift-up.svg (a terminal card made from a real run's output) and docs/images/control-screen.png (a real `protolift ui` screenshot, light theme). README shows them under the pitch, under Use and in a new "The control screen" part. The text diagram they replace is gone.
+**Files touched:** `README.md:9`, `README.md:69`, `README.md:91-97`, `docs/images/*`
+**Wiring mapped:** README.md is the only reader of docs/images (grep docs/images: 3 matches, all in README.md). archtest scans .md prose for semicolons and every file for private-name fingerprints.
+**Blast radius:** docs only, low.
+**Tests run:** `go test ./...` green. Live run on AWS ap-south-1 (shop-demo, nginx on 18080): up 1 min 57 s, edit visible on localhost after 0.23 s, then down and uninstall. Leftover scan by tag protolift:managed: 0 instances, volumes, groups, alarms, role. Every image checked by eye for account ids, instance ids, IPs, profile names and local paths: none.
+**Regression risks (for next fix in this area):**
+- The terminal card is real output. If a message in `up`, `status` or `cost` changes, take a fresh run and regenerate the card, never hand-edit it.
+- Run the capture from a neutral folder (the card and the screen show the project path) and pass the login through the environment, not `--profile`.
+- The flow picture says 30 idle minutes and 12 hours. If those defaults change, update it.
+
+---
+
 ## [2026-11-05 21:00] installers retry temporary download errors
 
 **Symptom:** After the v0.1.0 tag was moved, GitHub's release download answered 504 for a while, and the installer failed at once with "download failed".

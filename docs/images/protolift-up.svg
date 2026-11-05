@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="686" viewBox="0 0 1040 686" role="img" aria-label="Terminal: protolift up starts a box and prints http://localhost:18080, then protolift status and protolift cost">
+<rect width="1040" height="686" rx="14" fill="#11161c"/>
+<rect width="1040" height="38" rx="14" fill="#1a2129"/>
+<rect y="24" width="1040" height="14" fill="#1a2129"/>
+<circle cx="24" cy="19" r="6" fill="#f0776c"/>
+<circle cx="44" cy="19" r="6" fill="#f2c86b"/>
+<circle cx="64" cy="19" r="6" fill="#5fd3a5"/>
+<text x="520" y="24" text-anchor="middle" fill="#8b97a3" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13">shop-demo, a real run on AWS</text>
+<g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" xml:space="preserve" style="white-space:pre">
+<text x="28" y="58"><tspan fill="#5fd3a5">$ </tspan><tspan fill="#d7dde4" font-weight="700">protolift up --size XL --yes</tspan></text>
+<text x="28" y="78" fill="#e9a35a">→ checking which chips your images support</text>
+<text x="28" y="98" fill="#d7dde4">  chip: ARM, because every image supports it (about 20-45% cheaper than Intel)</text>
+<text x="28" y="118" fill="#d7dde4">  size: XL · 16 CPU · 32 GB (you chose it)</text>
+<text x="28" y="138" fill="#f2c86b">? Create box XL · 16 CPU · 32 GB (c7g.4xlarge) on aws ap-south-1 · about $0.39/hour · stops after 30 min idle? yes (--yes)</text>
+<text x="28" y="158" fill="#e9a35a">→ creating your box</text>
+<text x="28" y="178" fill="#d7dde4">  box running. Waiting for the private tunnel</text>
+<text x="28" y="198" fill="#e9a35a">→ installing Docker and tools on the new box (about 2-3 minutes, only the first time)</text>
+<text x="28" y="218" fill="#d7dde4">  budget: the box stops itself in about 764 min (this project&#x27;s daily budget)</text>
+<text x="28" y="238" fill="#e9a35a">→ syncing your files (the first time copies everything)</text>
+<text x="28" y="258" fill="#d7dde4">  sync shop-demo: /tmp/shop-demo ↔ box:/work/shop-demo</text>
+<text x="28" y="278" fill="#e9a35a">→ starting shop-demo</text>
+<text x="28" y="298" fill="#e9a35a">→ ready</text>
+<text x="28" y="318" fill="#8fb8ff">  web            http://localhost:18080</text>
+<text x="28" y="338" fill="#d7dde4">  box c7g.4xlarge · about $0.39/hour · stops itself after 30 min idle (max 12 h)</text>
+<text x="28" y="378"><tspan fill="#5fd3a5">$ </tspan><tspan fill="#d7dde4" font-weight="700">protolift status</tspan></text>
+<text x="28" y="398" fill="#d7dde4">project  shop-demo</text>
+<text x="28" y="418" fill="#d7dde4">box      protolift-shop-demo · running · c7g.4xlarge</text>
+<text x="28" y="438" fill="#d7dde4">size     XL · 16 CPU · 32 GB · about $0.39/hour</text>
+<text x="28" y="458" fill="#d7dde4">cost     about $0.01 since it started 20:37</text>
+<text x="28" y="478" fill="#d7dde4">ports    localhost:18080</text>
+<text x="28" y="498" fill="#d7dde4">sync     shop-demo: in sync, watching for changes</text>
+<text x="28" y="518" fill="#d7dde4">memory   peak 0.9 GB</text>
+<text x="28" y="538" fill="#d7dde4">tip      peak use 0.9 GB of 32 GB: size S would do (`protolift resize S`, about $0.06/hour)</text>
+<text x="28" y="578"><tspan fill="#5fd3a5">$ </tspan><tspan fill="#d7dde4" font-weight="700">protolift cost</tspan></text>
+<text x="28" y="598" fill="#d7dde4">PROJECT    CLOUD           TODAY  MONTH  DAILY CAP  MONTHLY CAP</text>
+<text x="28" y="618" fill="#d7dde4">shop-demo  aws ap-south-1  $0.01  $0.01  $5.00      $60.00</text>
+<text x="28" y="638" fill="#d7dde4">TOTAL                      $0.04  $0.04  no cap     no cap</text>
+<text x="28" y="658" fill="#8b97a3">Estimates from running time × list price. Your cloud bill is the real amount.</text>
+</g></svg>

@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="470" viewBox="0 0 1040 470" role="img" aria-label="protolift setup flow: 1 install, 2 protolift init, 3 protolift up starts a box in your own cloud account, 4 work on localhost with the same ports and live file sync, 5 the box stops itself">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6b6258"/></marker></defs>
+<rect width="1040" height="470" rx="18" fill="#fbf7f1"/>
+<text x="36" y="44" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#b7791f">SETUP FLOW</text>
+<rect x="36" y="64" width="172" height="150" rx="14" fill="#ffffff" stroke="#e6dccd" stroke-width="1.5"/>
+<rect x="36" y="64" width="172" height="5" rx="2" fill="#6b6258"/>
+<circle cx="66" cy="100" r="15" fill="#6b6258"/>
+<text x="66" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">1</text>
+<text x="52" y="142" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#1d1a16">Install</text>
+<text x="52" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#6b6258">one line</text>
+<text x="52" y="185" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">macOS, Linux</text>
+<text x="52" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">or Windows</text>
+<line x1="210" y1="139.0" x2="229" y2="139.0" stroke="#6b6258" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="231" y="64" width="172" height="150" rx="14" fill="#ffffff" stroke="#e6dccd" stroke-width="1.5"/>
+<rect x="231" y="64" width="172" height="5" rx="2" fill="#0f8b7d"/>
+<circle cx="261" cy="100" r="15" fill="#0f8b7d"/>
+<text x="261" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">2</text>
+<text x="247" y="142" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="15" font-weight="700" fill="#1d1a16">protolift init</text>
+<text x="247" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#6b6258">once per account</text>
+<text x="247" y="185" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">pick AWS or</text>
+<text x="247" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">Google Cloud</text>
+<line x1="405" y1="139.0" x2="424" y2="139.0" stroke="#6b6258" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="426" y="64" width="172" height="150" rx="14" fill="#ffffff" stroke="#e6dccd" stroke-width="1.5"/>
+<rect x="426" y="64" width="172" height="5" rx="2" fill="#0f8b7d"/>
+<circle cx="456" cy="100" r="15" fill="#0f8b7d"/>
+<text x="456" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">3</text>
+<text x="442" y="142" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="15" font-weight="700" fill="#1d1a16">protolift up</text>
+<text x="442" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#6b6258">in your project</text>
+<text x="442" y="185" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">a box starts in</text>
+<text x="442" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">YOUR account</text>
+<line x1="600" y1="139.0" x2="619" y2="139.0" stroke="#6b6258" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="621" y="64" width="172" height="150" rx="14" fill="#ffffff" stroke="#e6dccd" stroke-width="1.5"/>
+<rect x="621" y="64" width="172" height="5" rx="2" fill="#2f6fd6"/>
+<circle cx="651" cy="100" r="15" fill="#2f6fd6"/>
+<text x="651" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">4</text>
+<text x="637" y="142" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#1d1a16">Work on localhost</text>
+<text x="637" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#6b6258">editor + browser</text>
+<text x="637" y="185" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">same ports,</text>
+<text x="637" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">files sync live</text>
+<line x1="795" y1="139.0" x2="814" y2="139.0" stroke="#6b6258" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="816" y="64" width="172" height="150" rx="14" fill="#ffffff" stroke="#e6dccd" stroke-width="1.5"/>
+<rect x="816" y="64" width="172" height="5" rx="2" fill="#c2453a"/>
+<circle cx="846" cy="100" r="15" fill="#c2453a"/>
+<text x="846" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#ffffff">5</text>
+<text x="832" y="142" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#1d1a16">It stops itself</text>
+<text x="832" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#6b6258">no surprise bill</text>
+<text x="832" y="185" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">30 min idle, budget</text>
+<text x="832" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#1d1a16">or 12 hours</text>
+<text x="36" y="252" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#b7791f">WHAT RUNS WHERE</text>
+<rect x="36" y="268" width="300" height="170" rx="14" fill="#ffffff" stroke="#2f6fd6" stroke-width="1.8"/>
+<text x="58" y="300" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#2f6fd6">Your laptop</text>
+<rect x="58" y="326" width="256" height="26" rx="7" fill="#eef4fd"/>
+<text x="70" y="343" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1d1a16">editor</text>
+<text x="302" y="343" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#2f6fd6">your files</text>
+<rect x="58" y="360" width="256" height="26" rx="7" fill="#eef4fd"/>
+<text x="70" y="377" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1d1a16">browser</text>
+<text x="302" y="377" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#2f6fd6">localhost:3000</text>
+<rect x="58" y="394" width="256" height="26" rx="7" fill="#eef4fd"/>
+<text x="70" y="411" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1d1a16">protolift</text>
+<text x="302" y="411" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#2f6fd6">no Docker needed</text>
+<rect x="350" y="301" width="276" height="104" rx="12" fill="#fdf3e3" stroke="#b7791f" stroke-dasharray="5 4" stroke-width="1.4"/>
+<text x="488.0" y="325" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13.5" font-weight="700" fill="#b7791f">private tunnel</text>
+<line x1="366" y1="351" x2="610" y2="351" stroke="#b7791f" stroke-width="1.6" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<rect x="402.0" y="341" width="172" height="20" rx="10" fill="#fdf3e3"/>
+<text x="488.0" y="355" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#1d1a16">files sync both ways</text>
+<line x1="366" y1="377" x2="610" y2="377" stroke="#b7791f" stroke-width="1.6" marker-end="url(#ah)" marker-start="url(#ah)"/>
+<rect x="402.0" y="367" width="172" height="20" rx="10" fill="#fdf3e3"/>
+<text x="488.0" y="381" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12.5" fill="#1d1a16">same ports on localhost</text>
+<rect x="640" y="268" width="364" height="170" rx="14" fill="#ffffff" stroke="#0f8b7d" stroke-width="1.8"/>
+<text x="662" y="300" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#0f8b7d">Your AWS or Google Cloud account</text>
+<rect x="662" y="316" width="320" height="76" rx="10" fill="#eaf6f4"/>
+<text x="676" y="338" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#1d1a16">cloud box</text>
+<text x="968" y="338" text-anchor="end" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#0f8b7d">no open ports</text>
+<rect x="676" y="352" width="94" height="28" rx="7" fill="#ffffff" stroke="#e6dccd"/>
+<text x="723" y="371" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#1d1a16">web :3000</text>
+<rect x="778" y="352" width="94" height="28" rx="7" fill="#ffffff" stroke="#e6dccd"/>
+<text x="825" y="371" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#1d1a16">api :8080</text>
+<rect x="880" y="352" width="94" height="28" rx="7" fill="#ffffff" stroke="#e6dccd"/>
+<text x="927" y="371" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12.5" fill="#1d1a16">database</text>
+<text x="662" y="418" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#6b6258">You pay your cloud directly. protolift runs no server.</text>
+</svg>

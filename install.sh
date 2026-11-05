@@ -11,6 +11,9 @@ REPO="Prabhudas111/protolift"
 fail() { echo "protolift install: $1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "needs $1"; }
 need curl; need tar; need uname
+# GitHub sometimes answers a download with a short-lived 5xx. curl retries
+# those (and timeouts) a few times with a pause. The checksum still decides.
+get() { curl -fsSL --retry 4 --retry-delay 3 --connect-timeout 20 "$@"; }
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$os" in darwin|linux) ;; *) fail "unsupported system $os (on Windows use install.ps1)";; esac
@@ -19,7 +22,7 @@ case "$arch" in x86_64|amd64) arch=amd64 ;; arm64|aarch64) arch=arm64 ;; *) fail
 
 version="${PROTOLIFT_VERSION:-}"
 if [ -z "$version" ]; then
-  version=$(curl -fsSL --max-time 30 "https://api.github.com/repos/$REPO/releases/latest" \
+  version=$(get --max-time 30 "https://api.github.com/repos/$REPO/releases/latest" \
     | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1)
   [ -n "$version" ] || fail "could not find the latest release"
 fi
@@ -29,8 +32,8 @@ base="https://github.com/$REPO/releases/download/$version"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 echo "Downloading protolift $version for $os/$arch..."
-curl -fsSL --max-time 300 -o "$tmp/$file" "$base/$file" || fail "download failed: $base/$file"
-curl -fsSL --max-time 60 -o "$tmp/checksums.txt" "$base/checksums.txt" || fail "checksum download failed"
+get --max-time 300 -o "$tmp/$file" "$base/$file" || fail "download failed: $base/$file (check your connection and run the installer again)"
+get --max-time 60 -o "$tmp/checksums.txt" "$base/checksums.txt" || fail "checksum download failed"
 
 want=$(grep " $file\$" "$tmp/checksums.txt" | cut -d' ' -f1)
 [ -n "$want" ] || fail "no checksum listed for $file"

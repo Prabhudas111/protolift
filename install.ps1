@@ -7,10 +7,24 @@
 $ErrorActionPreference = "Stop"
 $repo = "Prabhudas111/protolift"
 
+# GitHub sometimes answers a download with a short-lived 5xx. Each request
+# is tried up to 5 times with a pause. The checksum still decides.
+function Get-WithRetry([string]$Uri, [string]$OutFile, [int]$TimeoutSec) {
+  for ($i = 1; $i -le 5; $i++) {
+    try {
+      if ($OutFile) { Invoke-WebRequest -UseBasicParsing -TimeoutSec $TimeoutSec -Uri $Uri -OutFile $OutFile; return }
+      return Invoke-RestMethod -TimeoutSec $TimeoutSec -Uri $Uri
+    } catch {
+      if ($i -eq 5) { throw "protolift install: download failed after 5 tries: $Uri ($($_.Exception.Message))" }
+      Start-Sleep -Seconds (3 * $i)
+    }
+  }
+}
+
 $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "arm64" } else { "amd64" }
 $version = $env:PROTOLIFT_VERSION
 if (-not $version) {
-  $version = (Invoke-RestMethod -TimeoutSec 30 "https://api.github.com/repos/$repo/releases/latest").tag_name
+  $version = (Get-WithRetry -Uri "https://api.github.com/repos/$repo/releases/latest" -TimeoutSec 30).tag_name
 }
 if (-not $version) { throw "protolift install: could not find the latest release" }
 
@@ -20,8 +34,8 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("protolift-" + [guid]::NewGu
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
   Write-Host "Downloading protolift $version for windows/$arch..."
-  Invoke-WebRequest -TimeoutSec 300 -Uri "$base/$file" -OutFile (Join-Path $tmp $file)
-  Invoke-WebRequest -TimeoutSec 60 -Uri "$base/checksums.txt" -OutFile (Join-Path $tmp "checksums.txt")
+  Get-WithRetry -Uri "$base/$file" -OutFile (Join-Path $tmp $file) -TimeoutSec 300
+  Get-WithRetry -Uri "$base/checksums.txt" -OutFile (Join-Path $tmp "checksums.txt") -TimeoutSec 60
 
   $line = Get-Content (Join-Path $tmp "checksums.txt") | Where-Object { $_ -match " $([regex]::Escape($file))$" }
   if (-not $line) { throw "protolift install: no checksum listed for $file" }

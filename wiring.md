@@ -6,6 +6,19 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 
 ---
 
+## [2026-11-05 21:00] installers retry temporary download errors
+
+**Symptom:** After the v0.1.0 tag was moved, GitHub's release download answered 504 for a while, and the installer failed at once with "download failed".
+**Root cause:** install.sh and install.ps1 made each download exactly once. Any short-lived 5xx or timeout ended the install.
+**Fix:** install.sh downloads through `get()` (curl `--retry 4 --retry-delay 3 --connect-timeout 20`, which retries 408, 429, 5xx and timeouts). install.ps1 uses `Get-WithRetry` (5 tries with a growing pause, works on Windows PowerShell 5.1 and 7). The checksum check is unchanged and still decides what is installed.
+**Files touched:** install.sh, install.ps1
+**Wiring mapped:** both are user entry points, so there are no callers in the repo. README and the Proto.Engineer page show the same one-line commands, which are unchanged.
+**Blast radius:** low.
+**Tests run:** `sh -n install.sh` · a real install from the script on macOS arm64 → v0.1.0 · all 7 release assets answer 200.
+**Regression risks:** keep `get()` above its first use (a test install caught that order bug). Moving a release tag turns the release into a draft. Publish it again at once, and expect a short window of 504s from GitHub's download host.
+
+---
+
 ## [2026-11-06 00:30] plain sentences everywhere, licence appendix filled
 
 **Symptom:** The founder flagged semicolons in docs and messages as reading machine-written, and the LICENSE appendix showing "Copyright [yyyy] [name of copyright owner]".

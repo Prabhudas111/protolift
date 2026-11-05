@@ -1,0 +1,38 @@
+# Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
+# SPDX-License-Identifier: Apache-2.0
+version: 2
+project_name: protolift
+
+builds:
+  - id: protolift
+    main: ./cmd/protolift
+    binary: protolift
+    env: [CGO_ENABLED=0]
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: ["-s -w -X main.version={{ .Tag }}"]
+
+archives:
+  - id: protolift
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "protolift_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files: [LICENSE, NOTICE, README.md, TRADEMARKS.md]
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: Prabhudas111
+    name: protolift
+  footer: |
+    Install: `curl -fsSL https://raw.githubusercontent.com/Prabhudas111/protolift/main/install.sh | sh`
+    Built by Prabhudas Avanigadda · [Proto.Engineer](https://www.proto-engineer.com)

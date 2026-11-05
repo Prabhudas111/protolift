@@ -24,6 +24,8 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 - archtest `matches`: no trailing slash = exact package. Keep entry points (mcpserver/webui) on the facade only.
 - The budget stop runs at 5-minute granularity. Unknown price means no budget stop, and protolift warns. GCP price table is empty until filled from the Billing Catalog.
 - MCP stdout is the protocol channel. Nothing may print to stdout in `mcp` mode.
+**Live re-test (AWS, test account):** fresh up 111 s; $1/day budget became BUDGET_MINUTES=153 on the box; `cost`, `status --json` correct; a used-up budget refused `up` with the fix; Stop through the screen API stopped the box; down + uninstall left 0 instances, volumes, SGs, alarms, role.
+**Bug the screenshot found:** the guard required the token on app.js/app.css, which the browser fetches without it, so the page loaded unstyled and inert. Public assets (no data) are now exempt from the token, the host check still applies, and a test guards it.
 **Related:** ADR 0007–0010, docs/cost.md, docs/agents.md, docs/iam/gcp.md.
 
 ---

@@ -98,7 +98,11 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 	return nil
 }
 
-// guard checks host and token on every request and sets strict headers.
+// publicAsset are the files the page loads by itself (no token on them).
+var publicAsset = map[string]bool{"/app.js": true, "/app.css": true}
+
+// guard checks the host on every request, the token on everything but the
+// public assets, and sets strict headers.
 func (s *Server) guard(next http.Handler) http.Handler {
 	port := s.addr[strings.LastIndex(s.addr, ":"):]
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +114,10 @@ func (s *Server) guard(next http.Handler) http.Handler {
 		if tok == "" {
 			tok = r.URL.Query().Get("t")
 		}
-		if subtle.ConstantTimeCompare([]byte(tok), []byte(s.token)) != 1 {
+		// The page's script and styles are the same public code for everyone
+		// and hold no data, so the browser may fetch them without the token.
+		// The page itself, all data and all actions need it.
+		if !publicAsset[r.URL.Path] && subtle.ConstantTimeCompare([]byte(tok), []byte(s.token)) != 1 {
 			http.Error(w, "open the link that `protolift ui` printed", http.StatusUnauthorized)
 			return
 		}

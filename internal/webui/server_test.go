@@ -27,6 +27,7 @@ func testServer(t *testing.T) (*Server, http.Handler) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", s.page("static/index.html", "text/html"))
 	mux.HandleFunc("GET /api/state", s.api(s.state))
+	mux.HandleFunc("GET /app.js", s.page("static/app.js", "text/javascript"))
 	return s, s.guard(mux)
 }
 
@@ -74,5 +75,18 @@ func TestListensOnLoopbackOnly(t *testing.T) {
 	s, _ := testServer(t)
 	if !strings.HasPrefix(s.addr, "127.0.0.1:") || !strings.Contains(s.URL(), "?t="+s.token) || len(s.token) != 48 {
 		t.Fatalf("addr=%s url=%s", s.addr, s.URL())
+	}
+}
+
+func TestAssetsLoadWithoutTokenButDataDoesNot(t *testing.T) {
+	s, h := testServer(t)
+	if w := do(h, s.addr, "/app.js", ""); w.Code != http.StatusOK {
+		t.Fatalf("the page script must load without a token: %d", w.Code)
+	}
+	if w := do(h, "evil.example:1", "/app.js", ""); w.Code != http.StatusForbidden {
+		t.Fatalf("the host check still applies to assets: %d", w.Code)
+	}
+	if w := do(h, s.addr, "/", ""); w.Code != http.StatusUnauthorized {
+		t.Fatalf("the page itself needs the token: %d", w.Code)
 	}
 }

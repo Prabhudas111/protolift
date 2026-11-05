@@ -15,14 +15,31 @@ import (
 	"github.com/Prabhudas111/protolift/internal/env/domain"
 )
 
-// Cloud creates, finds and removes boxes and the one-time account pieces.
+// Cloud is one cloud provider. Everything that differs between clouds lives
+// behind this interface: machine types, prices, which types a region offers,
+// how ssh reaches a box, and how the login key gets there. A new cloud is a
+// new adapter plus one line in the composition root's registry.
 type Cloud interface {
+	// Provider is the short name users pick with --cloud (aws, gcp).
+	Provider() string
 	Region() string
+	// Account names who and where commands act, e.g. an account or project.
 	Account(ctx context.Context) (string, error)
 	// Init is idempotent: it only creates what is missing.
 	Init(ctx context.Context, log func(string)) error
 	// Ready returns NOT_SET_UP when Init has not been run.
 	Ready(ctx context.Context) error
+
+	// InstanceType maps a cloud-neutral size and chip to this cloud's type.
+	InstanceType(size domain.Size, arch domain.Arch) string
+	// SizeOf maps one of this cloud's types back to a size and chip.
+	SizeOf(instanceType string) (domain.Size, domain.Arch, bool)
+	// Price is this cloud's hourly estimate for a type in its region.
+	Price(instanceType string) domain.Price
+	// Supports reports whether this region offers the type, so the use case
+	// can fall back (for example to Intel) instead of failing at create.
+	Supports(ctx context.Context, instanceType string) (bool, error)
+
 	ListBoxes(ctx context.Context, envID string) ([]domain.Box, error)
 	// FindBox returns ok=false when the env has no box.
 	FindBox(ctx context.Context, envID string) (domain.Box, bool, error)
@@ -31,8 +48,13 @@ type Cloud interface {
 	StopBox(ctx context.Context, b domain.Box) error
 	DeleteBox(ctx context.Context, b domain.Box) error
 	ResizeBox(ctx context.Context, b domain.Box, instanceType string) error
-	// WaitReachable blocks until the box runs and the private tunnel works.
+	// WaitReachable blocks until the box runs and its private tunnel works.
 	WaitReachable(ctx context.Context, b domain.Box, log func(string)) error
+	// ProxyCommand is the ssh ProxyCommand that reaches the box through this
+	// cloud's private tunnel. It may use %h (HostName) and %p (port).
+	ProxyCommand(b domain.Box, pubKeyPath string) string
+	// HostName is what ssh's HostName should be for the box.
+	HostName(b domain.Box) string
 	// Uninstall refuses with CONFLICT while any box exists.
 	Uninstall(ctx context.Context, log func(string)) error
 }
@@ -43,6 +65,13 @@ type BoxSpec struct {
 	InstanceType string
 	Arch         domain.Arch
 	BootScript   string
+	// PubKey is the env's ssh public key. Clouds that push a short-lived key
+	// per connection (AWS) ignore it; clouds that place it at create time
+	// (GCP instance metadata) use it.
+	PubKey string
+	// MaxHours is the hard run limit for clouds that can enforce it outside
+	// the box (Compute Engine max run duration). 0 means no cloud-side limit.
+	MaxHours int
 }
 
 // Remote runs commands on a box over the private tunnel.
@@ -59,6 +88,8 @@ type Remote interface {
 	Reset(ctx context.Context, b domain.Box) error
 	// Forget drops what the laptop remembers about a deleted box.
 	Forget(b domain.Box) error
+	// PublicKey returns the env's ssh public key, creating the pair once.
+	PublicKey(envID string) (string, error)
 }
 
 // TunnelEvent reports the state of the port mirror.
@@ -110,11 +141,23 @@ type Store interface {
 	LoadEnv(id string) (EnvRecord, bool, error)
 	SaveEnv(r EnvRecord) error
 	RemoveEnv(id string) error
+	// ListEnvs returns every env this laptop knows, for cost and the screen.
+	ListEnvs() ([]EnvRecord, error)
+	// UpdateSettings changes a project's settings file in place.
+	UpdateSettings(dir, name string, change func(*domain.Settings)) error
+	// LoadLedger and SaveLedger keep the record of box running time.
+	LoadLedger() (domain.Ledger, error)
+	SaveLedger(l domain.Ledger) error
+	// GlobalBudget caps spend across every project on this laptop.
+	GlobalBudget() (domain.Budget, error)
+	SaveGlobalBudget(b domain.Budget) error
 }
 
 // EnvRecord is what protolift remembers about an env between runs.
 type EnvRecord struct {
 	ID, Name, Region, Profile string
+	Provider, Project         string
+	Dir, EnvName              string // project folder and --name, to reach its settings
 	BoxID, InstanceType       string
 	Arch                      domain.Arch
 	Ports                     []int
@@ -143,8 +186,9 @@ type UI interface {
 type Scripts interface {
 	// Boot is the first-start script (packages, idle stop, ready marker).
 	Boot(s domain.Settings) string
-	// IdleConfig is the idle-stop settings file content.
-	IdleConfig(s domain.Settings) []byte
+	// IdleConfig is the box-side stop settings: idle minutes, max hours, and
+	// the minutes since start the budget allows (0 = no budget stop).
+	IdleConfig(s domain.Settings, budgetMinutes int) []byte
 	IdleConfigPath() string
 	// BootState prints "ready", "waiting", or "failed" then a log tail.
 	BootState() string

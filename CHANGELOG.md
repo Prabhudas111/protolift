@@ -4,6 +4,13 @@
 
 First release.
 
+- **Clouds as plug-ins:** AWS and Google Cloud (`--cloud aws|gcp`). Each cloud is one adapter, and Azure is planned.
+- **Cost control:** daily and monthly budgets per project and in total (`protolift budget`), `protolift cost`,
+  `up` refuses over budget, and the box stops itself when its budget runs out, even with the laptop closed.
+- **AI agents:** MCP server over stdio and local HTTP (`protolift mcp`), an Agent Skill, and `--json` output.
+- **Local control screen:** `protolift ui`, loopback only, token-protected.
+- No outside code contributions: outside pull requests are closed automatically.
+
 - `init`, `up`, `status`, `list`, `stop`, `resize`, `down`, `uninstall`, `config`, `ssh`, `logs`.
 - Boxes in your own AWS account, with no inbound rules: access goes through AWS Systems Manager with 60-second SSH keys.
 - Two-way live file sync (a pinned, checksum-verified Mutagen with a private daemon).

@@ -1,13 +1,13 @@
 # protolift
 
-**Run your whole dev stack in your own AWS account, and use it on `localhost` as if it ran on your laptop.**
+**Run your whole dev stack in your own AWS or Google Cloud account, and use it on `localhost` as if it ran on your laptop.**
 
 Your laptop is too slow or too full for Docker and your services? protolift starts a cloud box in
-**your** AWS account, keeps your files in sync both ways, runs your stack there, and mirrors every
+**your** AWS or Google Cloud account, keeps your files in sync both ways, runs your stack there, and mirrors every
 port back to the same port on your laptop. Your editor, browser and tools do not change.
 
 ```text
-  your laptop                                   your AWS account
+  your laptop                                   your AWS / Google Cloud account
  ┌──────────────────────┐   private tunnel    ┌───────────────────────────┐
  │ editor  ── files ────┼─── live sync ───────┼─▶ /work/your-app          │
  │ browser ── :3000 ────┼─── same ports ──────┼─▶ web :3000  api :8080    │
@@ -16,12 +16,16 @@ port back to the same port on your laptop. Your editor, browser and tools do not
                                               └───────────────────────────┘
 ```
 
-- **Your account, your bill.** protolift runs no server. It uses your own AWS login and you pay AWS directly.
+- **Your account, your bill.** protolift runs no server. It uses your own cloud login and you pay the cloud directly.
+- **Any cloud, plug-in style.** AWS and Google Cloud today (`--cloud aws|gcp`). Each cloud is one adapter.
 - **No project changes.** It reads your existing `compose.yaml` and starts your services with the same port numbers.
 - **Live sync.** A save on the laptop reaches the box in well under a second. In our test, a page change was
   visible on `localhost` 0.22 s after saving.
-- **Safe on cost.** The box stops itself after 30 idle minutes (and always after 12 hours). An AWS alarm stops
-  it after an idle hour even if your laptop is off. `protolift down` deletes everything it made.
+- **Cost control.** Daily and monthly budgets per project and in total. `up` refuses to go over, and the box
+  stops itself when its budget, 30 idle minutes or 12 hours run out, even with your laptop closed.
+  `protolift cost` and the local screen (`protolift ui`) show spend. `protolift down` deletes everything it made.
+- **AI-ready.** An MCP server (`protolift mcp`), an Agent Skill and `--json` output let AI agents use it safely:
+  anything that costs money or deletes needs an explicit yes.
 - **Private.** The box has no inbound network rules. Access goes only through AWS Systems Manager, with a
   single-use SSH key per connection.
 - **Any OS.** macOS, Linux and Windows. One program, no Docker on the laptop.
@@ -44,17 +48,21 @@ Or with Go: `go install github.com/Prabhudas111/protolift/cmd/protolift@latest`
 
 You also need, once:
 
-- an AWS login (`aws configure sso` or `aws configure`),
-- the [AWS Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
+- the OpenSSH client (built into macOS, Linux and Windows 10+),
+- **AWS:** a login (`aws configure sso`) and the
+  [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
   (`brew install --cask session-manager-plugin` on macOS),
-- the OpenSSH client (built into macOS, Linux and Windows 10+).
+- **Google Cloud:** the [gcloud CLI](https://cloud.google.com/sdk/docs/install) and a login (`gcloud auth login`).
 
 ## Use
 
 ```sh
-protolift init      # once per AWS account and region (safe to run again)
+protolift init                  # once per account and region (safe to run again)
 cd my-app
-protolift up        # create or wake the box, sync, start, mirror ports
+protolift up                    # create or wake the box, sync, start, mirror ports
+
+protolift init --cloud gcp --project my-project --region us-central1   # the same on Google Cloud
+protolift up --cloud gcp
 ```
 
 `up` prints your links (`http://localhost:3000` and so on) and keeps the ports mirrored until you press
@@ -71,22 +79,26 @@ Ctrl-C. The box keeps running after that and stops itself when idle.
 | `protolift down` | Deletes the box, its disk and its alarm. Nothing is left in AWS. |
 | `protolift uninstall` | Removes the one-time setup from `init`. |
 | `protolift config` | Shows (and creates) this project's settings file, kept **outside** your repo. |
+| `protolift cost` | Spend today and this month, per project and in total. |
+| `protolift budget --daily 5 --monthly 60 [--all]` | Sets spending caps for this project, or all projects. |
+| `protolift ui` | Opens the local control screen: boxes, spend, budgets, start/stop. This computer only. |
+| `protolift mcp` | MCP server for AI agents (`--http` for a local URL). See [docs/agents.md](docs/agents.md). |
 | `protolift ssh` | Opens a terminal on the box. |
 | `protolift logs [service]` | Follows logs on the box. |
 
 ### Box sizes
 
-protolift suggests a size from your stack and asks before creating anything. Example prices (On-Demand
-Linux, ARM, `us-east-1`, November 2026; AWS bills the real amount):
+protolift suggests a size from your stack and asks, with the price, before creating anything.
 
-| Size | CPU | Memory | ARM type | Per hour |
+| Size | CPU | Memory | AWS (ARM / Intel) | Google Cloud (ARM / Intel) |
 |---|---|---|---|---|
-| S | 2 | 8 GB | m7g.large | about $0.08 |
-| M | 4 | 16 GB | m7g.xlarge | about $0.16 |
-| L | 8 | 32 GB | m7g.2xlarge | about $0.33 |
-| XL | 16 | 32 GB | c7g.4xlarge | about $0.58 |
+| S | 2 | 8 GB | m7g.large / m7i.large | t2a-standard-2 / n2-standard-2 |
+| M | 4 | 16 GB | m7g.xlarge / m7i.xlarge | t2a-standard-4 / n2-standard-4 |
+| L | 8 | 32 GB | m7g.2xlarge / m7i.2xlarge | t2a-standard-8 / n2-standard-8 |
+| XL | 16 | 32 GB+ | c7g.4xlarge / c7i.4xlarge | t2a-standard-16 / n2-standard-16 |
 
-ARM is chosen when every image in your stack supports it, because it costs less. Otherwise Intel is used.
+ARM is chosen when every image in your stack supports it and the region offers it, because it costs less.
+Otherwise Intel is used. See [docs/cost.md](docs/cost.md) for budgets and stops.
 
 ### Stacks without a compose file
 
@@ -120,10 +132,10 @@ file sync and Docker Compose. Read [ARCHITECTURE.md](ARCHITECTURE.md) for the de
 Want to learn how pieces like these work: tunnels, networking, cloud, system design? That is what
 **[Proto.Engineer](https://www.proto-engineer.com)** teaches.
 
-## AWS permissions
+## Cloud permissions
 
-- [docs/iam/init-admin.json](docs/iam/init-admin.json): what `init` and `uninstall` need (one time, usually an admin).
-- [docs/iam/daily-user.json](docs/iam/daily-user.json): what `up`, `stop`, `down` and the rest need every day.
+- AWS: [docs/iam/init-admin.json](docs/iam/init-admin.json) (one time) and [docs/iam/daily-user.json](docs/iam/daily-user.json) (every day).
+- Google Cloud: [docs/iam/gcp.md](docs/iam/gcp.md).
 
 If your AWS organization limits box types or regions (a service control policy), protolift says so. Ask your
 admin which types are allowed and pick a matching `--size`.
@@ -131,6 +143,10 @@ admin which types are allowed and pick a matching `--size`.
 ## Troubleshooting
 
 See [docs/troubleshooting.md](docs/troubleshooting.md). Add `--debug` to any command for the full error.
+
+## Contributions
+
+protolift does not accept outside code contributions. Issues (bugs, ideas) are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

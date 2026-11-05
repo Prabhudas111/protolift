@@ -33,7 +33,7 @@ func TestUpCreatesSyncsStartsAndMirrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	// postgres (1) + 1 built service (1.5) + system (2) = 4.5 GB → S, on ARM.
-	for _, want := range []string{"create:m7g.large", "sync", "run:SETUP /work/app", "run:START /work/app", "mirror"} {
+	for _, want := range []string{"create:a.s", "sync", "run:SETUP /work/app", "run:START /work/app", "mirror"} {
 		if !w.calls.has(want) {
 			t.Fatalf("missing step %q in %v", want, w.calls.calls)
 		}
@@ -83,7 +83,7 @@ func TestUpStopsOnBusyPort(t *testing.T) {
 
 func TestUpWakesStoppedBoxAndSkipsUnchangedSetup(t *testing.T) {
 	w := newWorld(true)
-	w.cloud.box = &domain.Box{ID: "i-0123456789abcdef0", EnvID: "abc1234567", State: domain.BoxStopped, InstanceType: "m7g.xlarge", Arch: domain.ArchARM}
+	w.cloud.box = &domain.Box{ID: "i-0123456789abcdef0", EnvID: "abc1234567", State: domain.BoxStopped, InstanceType: "a.m", Arch: domain.ArchARM}
 	w.store.SaveEnv(portsRecord("h1"))
 	if err := w.svc.Up(context.Background(), UpRequest{Detached: true}); err != nil {
 		t.Fatal(err)
@@ -123,14 +123,15 @@ func TestDownAsksFirst(t *testing.T) {
 
 func TestStatusAdvisesSmallerSize(t *testing.T) {
 	w := newWorld(true)
-	w.cloud.box = &domain.Box{ID: "i-0123456789abcdef0", State: domain.BoxRunning, InstanceType: "m7g.2xlarge", Arch: domain.ArchARM,
+	w.cloud.box = &domain.Box{ID: "i-0123456789abcdef0", State: domain.BoxRunning, InstanceType: "a.l", Arch: domain.ArchARM,
 		Region: "us-east-1", StartedAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)}
 	r, err := w.svc.Status(context.Background(), Target{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	// 3.1 GB peak × 1.3 → fits S; the box is L.
-	if !strings.Contains(r.Advice, "size S") || !strings.Contains(r.CostSoFar, "$0.65") {
+	// a.l = 8 CPU × $0.04 = $0.32/h, for 2 hours = $0.64.
+	if !strings.Contains(r.Advice, "size S") || !strings.Contains(r.CostSoFar, "$0.64") {
 		t.Fatalf("status = %+v", r)
 	}
 }
@@ -150,5 +151,74 @@ func TestStepNamesTheSlowStep(t *testing.T) {
 	e := errs.As(err)
 	if e.Code != errs.CodeTimeout || !strings.Contains(e.Message, "starting web") {
 		t.Fatalf("want TIMEOUT naming the step, got %v", err)
+	}
+}
+
+func TestUpFallsBackToIntelWhenRegionHasNoARM(t *testing.T) {
+	w := newWorld(true)
+	w.cloud.noARM = true
+	if err := w.svc.Up(context.Background(), UpRequest{Detached: true}); err != nil {
+		t.Fatal(err)
+	}
+	if !w.calls.has("create:i.s") || !strings.Contains(w.output(), "has no a.s (ARM)") {
+		t.Fatalf("want Intel fallback with a reason, got %v\n%s", w.calls.calls, w.output())
+	}
+}
+
+func TestUpNeverOverridesTheUsersChip(t *testing.T) {
+	w := newWorld(true)
+	w.cloud.noARM = true
+	err := w.svc.Up(context.Background(), UpRequest{Detached: true, Arch: domain.ArchARM})
+	if errCode(err) != errs.CodeCapacity {
+		t.Fatalf("a chip the user chose must not change silently; want CAPACITY, got %v", err)
+	}
+}
+
+func TestUpRefusesWhenBudgetIsUsedUp(t *testing.T) {
+	w := newWorld(true)
+	w.store.project.Settings.Budget = domain.Budget{DailyUSD: 1}
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	w.store.ledger = domain.Ledger{Runs: []domain.Run{{EnvID: "abc1234567", BoxID: "old", HourlyUSD: 1, Start: now.Add(-2 * time.Hour), End: now.Add(-time.Hour / 2)}}}
+	err := w.svc.Up(context.Background(), UpRequest{Detached: true})
+	if errCode(err) != errs.CodeBudget {
+		t.Fatalf("want BUDGET, got %v", err)
+	}
+	for _, c := range w.calls.calls {
+		if strings.HasPrefix(c, "create") || c == "start" {
+			t.Fatal("nothing may start over budget")
+		}
+	}
+}
+
+func TestUpTellsTheBoxItsBudgetMinutes(t *testing.T) {
+	w := newWorld(true)
+	// Global $1/day; a.s costs 2 CPU × $0.04 = $0.08/h → 750 minutes.
+	w.store.global = domain.Budget{DailyUSD: 1}
+	if err := w.svc.Up(context.Background(), UpRequest{Detached: true}); err != nil {
+		t.Fatal(err)
+	}
+	got := w.remote.put["/etc/protolift/idle.conf"]
+	if got != "0644:IDLE budget=750" || !strings.Contains(w.output(), "stops itself in about 750 min") {
+		t.Fatalf("idle config = %q\n%s", got, w.output())
+	}
+	if len(w.store.ledger.Runs) != 1 {
+		t.Fatalf("the new run must be in the ledger: %+v", w.store.ledger.Runs)
+	}
+}
+
+func TestCostAndBudgetSettings(t *testing.T) {
+	w := newWorld(true)
+	if err := w.svc.SetGlobalBudget(domain.Budget{MonthlyUSD: 50}); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.svc.SetBudget(Target{}, domain.Budget{DailyUSD: -2}); errCode(err) != errs.CodeInvalidInput {
+		t.Fatalf("negative budget must be refused, got %v", err)
+	}
+	if err := w.svc.SetStops(Target{}, 45, 6); err != nil || w.store.project.Settings.IdleMinutes != 45 {
+		t.Fatalf("stops not saved: %v %+v", err, w.store.project.Settings)
+	}
+	r, err := w.svc.Cost(context.Background())
+	if err != nil || r.Global.MonthlyUSD != 50 || r.Note == "" {
+		t.Fatalf("cost = %+v %v", r, err)
 	}
 }

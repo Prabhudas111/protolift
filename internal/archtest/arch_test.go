@@ -54,14 +54,27 @@ var rules = []rule{
 	{"internal/env/ports", []string{"internal/env/domain", "internal/shared/"}, false},
 	{"internal/env/application", []string{"internal/env/domain", "internal/env/ports", "internal/shared/"}, false},
 	{"internal/env/adapters/", []string{"internal/env/domain", "internal/env/ports", "internal/shared/"}, true},
-	{"internal/env", []string{"internal/env/application", "internal/env/domain"}, false},
+	{"internal/env", []string{"internal/env/application", "internal/env/domain", "internal/env/ports"}, false},
+	// Driving adapters: other ways in besides the command line. They use only
+	// the facade (and the shared error model), never the layers below it.
+	{"internal/mcpserver", []string{"internal/env", "internal/shared/"}, true},
+	{"internal/webui", []string{"internal/env", "internal/shared/"}, true},
 	{"internal/archtest", nil, false},
 	{"cmd/", []string{"internal/"}, true},
 }
 
+// matches: a name ending in "/" covers that whole folder; any other name is
+// exactly one package. So "internal/env" never covers internal/env/adapters.
+func matches(pkg, pattern string) bool {
+	if strings.HasSuffix(pattern, "/") {
+		return strings.HasPrefix(pkg, pattern)
+	}
+	return pkg == pattern
+}
+
 func ruleFor(rel string) (rule, bool) {
 	for _, r := range rules {
-		if rel == strings.TrimSuffix(r.prefix, "/") || strings.HasPrefix(rel, r.prefix) {
+		if matches(rel, r.prefix) {
 			return r, true
 		}
 	}
@@ -120,9 +133,9 @@ func TestLayerImports(t *testing.T) {
 	}
 }
 
-func allowed(inner string, prefixes []string) bool {
-	for _, p := range prefixes {
-		if inner == strings.TrimSuffix(p, "/") || strings.HasPrefix(inner, p) {
+func allowed(inner string, patterns []string) bool {
+	for _, p := range patterns {
+		if matches(inner, p) {
 			return true
 		}
 	}

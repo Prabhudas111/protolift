@@ -39,7 +39,8 @@ type Deps struct {
 	Scripts ports.Scripts
 	UI      ports.UI
 	Clock   ports.Clock
-	Profile string
+	Profile string // AWS profile, remembered per env
+	Project string // Google Cloud project, remembered per env
 }
 
 // Service runs the use cases.

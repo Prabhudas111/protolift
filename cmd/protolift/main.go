@@ -18,39 +18,52 @@ import (
 
 	"github.com/Prabhudas111/protolift/internal/env"
 	"github.com/Prabhudas111/protolift/internal/env/adapters/sshremote"
+	"github.com/Prabhudas111/protolift/internal/env/adapters/terminal"
 	"github.com/Prabhudas111/protolift/internal/shared/errs"
 )
 
 // version is set at release time with -ldflags "-X main.version=v0.1.0".
 var version = "dev"
 
-const usage = `protolift: run your dev stack in your own AWS account, use it on localhost.
+const usage = `protolift: run your dev stack in your own cloud account (AWS or Google Cloud), use it on localhost.
 
 Usage:
   protolift <command> [flags]
 
 Commands:
-  init        set up your AWS account once (safe to run again)
+  init        set up your cloud account once (safe to run again)
   up          start the box, sync your files, run your stack, mirror its ports
   status      show the box, its cost, sync state and ports
   list        show every protolift box in this region
   stop        stop the box (your files and data stay on its disk)
   resize      change the box size: protolift resize S|M|L|XL
   down        delete the box and everything it made
-  uninstall   remove protolift's one-time setup from this AWS account
+  uninstall   remove protolift's one-time setup from this cloud account
   config      show (and create) the settings file for this project
+  cost        estimated spend today and this month, per project and in total
+  budget      set spending caps: protolift budget --daily 5 --monthly 60 [--all]
+  mcp         let AI agents use protolift over MCP (stdio; --http for a local URL)
+  ui          open the local control screen (this computer only)
   ssh         open a terminal on the box
   logs        follow logs on the box: protolift logs [folder|service]
   version     print the version
 
 Flags (any command):
-  --profile NAME   AWS profile to use (default: your AWS default)
-  --region NAME    AWS region (default: your AWS default)
+  --cloud NAME     aws or gcp (default: aws, or what the project used before)
+  --profile NAME   AWS profile (default: your AWS default)
+  --project ID     Google Cloud project (default: your gcloud project)
+  --region NAME    region, e.g. us-east-1 or us-central1 (default: your CLI default)
   --dir PATH       project folder (default: this folder)
   --name NAME      a second env for the same folder (e.g. per agent)
   --yes            answer yes to every question (for scripts)
   --quiet          only show warnings and errors
   --debug          show the full error behind a failure
+  --json           machine-readable output for status, list and cost
+
+Flags for ui and mcp:
+  --port N         local port (default: any free port)
+  --no-open        ui: print the link without opening a browser
+  --http           mcp: serve on a local URL with a token instead of stdio
 
 Flags for up:
   --size S|M|L|XL  box size for a new box (default: suggested from your stack)
@@ -71,11 +84,14 @@ func main() {
 
 // opts are the parsed flags of one command.
 type opts struct {
-	profile, region, dir, name string
-	yes, quiet, debug          bool
-	size, arch                 string
-	noEnv, detach              bool
-	args                       []string
+	cloud, profile, project          string
+	region, dir, name                string
+	yes, quiet, debug, asJSON        bool
+	size, arch                       string
+	noEnv, detach, all, http, noOpen bool
+	daily, monthly                   float64
+	port                             int
+	args                             []string
 }
 
 func run(argv []string, stdout, stderr io.Writer) int {
@@ -111,17 +127,26 @@ func parse(cmd string, rest []string) (opts, error) {
 	var o opts
 	fs := flag.NewFlagSet(cmd, flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
+	fs.StringVar(&o.cloud, "cloud", "", "")
 	fs.StringVar(&o.profile, "profile", "", "")
+	fs.StringVar(&o.project, "project", "", "")
 	fs.StringVar(&o.region, "region", "", "")
 	fs.StringVar(&o.dir, "dir", ".", "")
 	fs.StringVar(&o.name, "name", "", "")
 	fs.BoolVar(&o.yes, "yes", false, "")
 	fs.BoolVar(&o.quiet, "quiet", false, "")
 	fs.BoolVar(&o.debug, "debug", false, "")
+	fs.BoolVar(&o.asJSON, "json", false, "")
 	fs.StringVar(&o.size, "size", "", "")
 	fs.StringVar(&o.arch, "arch", "", "")
 	fs.BoolVar(&o.noEnv, "no-env", false, "")
 	fs.BoolVar(&o.detach, "detach", false, "")
+	fs.BoolVar(&o.all, "all", false, "")
+	fs.Float64Var(&o.daily, "daily", -1, "")
+	fs.Float64Var(&o.monthly, "monthly", -1, "")
+	fs.IntVar(&o.port, "port", 0, "")
+	fs.BoolVar(&o.http, "http", false, "")
+	fs.BoolVar(&o.noOpen, "no-open", false, "")
 	for len(rest) > 0 {
 		if err := fs.Parse(rest); err != nil {
 			return o, errs.Wrap(errs.CodeInvalidInput, err, "unknown flag for "+cmd, "run `protolift help` to see the flags")
@@ -143,11 +168,21 @@ func parse(cmd string, rest []string) (opts, error) {
 
 func dispatch(ctx context.Context, cmd string, o opts, stdout io.Writer) error {
 	known := map[string]bool{"init": true, "up": true, "status": true, "list": true, "stop": true, "resize": true,
-		"down": true, "uninstall": true, "config": true, "ssh": true, "logs": true}
+		"down": true, "uninstall": true, "config": true, "ssh": true, "logs": true,
+		"cost": true, "budget": true, "mcp": true, "ui": true}
 	if !known[cmd] {
 		return errs.New(errs.CodeInvalidInput, fmt.Sprintf("%q is not a protolift command", cmd), "run `protolift help` to see the commands")
 	}
-	m, err := wire(ctx, cmd, o)
+	switch cmd {
+	case "mcp":
+		if o.http {
+			return runMCPHTTP(ctx, o, stdout)
+		}
+		return runMCP(ctx, o)
+	case "ui":
+		return runUI(ctx, o, stdout)
+	}
+	m, err := wire(ctx, cmd, o, terminal.New(o.yes, o.quiet))
 	if err != nil {
 		return err
 	}
@@ -162,12 +197,18 @@ func dispatch(ctx context.Context, cmd string, o opts, stdout io.Writer) error {
 		if err != nil {
 			return err
 		}
+		if o.asJSON {
+			return printJSON(stdout, r)
+		}
 		printStatus(stdout, r)
 		return nil
 	case "list":
 		boxes, err := m.List(ctx)
 		if err != nil {
 			return err
+		}
+		if o.asJSON {
+			return printJSON(stdout, boxes)
 		}
 		printList(stdout, boxes)
 		return nil
@@ -190,6 +231,18 @@ func dispatch(ctx context.Context, cmd string, o opts, stdout io.Writer) error {
 		fmt.Fprintln(stdout, "settings for this project (outside your repo):")
 		fmt.Fprintln(stdout, "  "+p)
 		return nil
+	case "cost":
+		r, err := m.Cost(ctx)
+		if err != nil {
+			return err
+		}
+		if o.asJSON {
+			return printJSON(stdout, r)
+		}
+		printCost(stdout, r)
+		return nil
+	case "budget":
+		return setBudget(ctx, m, t, o, stdout)
 	case "ssh":
 		return m.SSH(ctx, t)
 	case "logs":

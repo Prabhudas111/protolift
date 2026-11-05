@@ -8,6 +8,9 @@
 # stops waiting and shows this log.
 set -uo pipefail
 STATE=/var/lib/protolift
+# Some clouds (Compute Engine) run the startup script on every boot; a box
+# that is already prepared has nothing to do.
+[ -f "$STATE/ready" ] && exit 0
 mkdir -p "$STATE" /etc/protolift
 chmod 755 "$STATE"
 LOG="$STATE/boot.log"
@@ -16,6 +19,13 @@ echo "protolift boot started $(date -u +%FT%TZ)"
 
 fail() { echo "FAILED: $1"; echo "$1" > "$STATE/failed"; exit 1; }
 retry() { local i; for i in 1 2 3 4 5; do "$@" && return 0; echo "retry $i: $*"; sleep $((i * 5)); done; return 1; }
+
+# The box user. AWS images ship it; on other clouds it may not exist yet.
+if ! id {{.User}} >/dev/null 2>&1; then
+  useradd -m -s /bin/bash {{.User}} || fail "could not create the {{.User}} user"
+fi
+echo "{{.User}} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-protolift
+chmod 440 /etc/sudoers.d/90-protolift
 
 export DEBIAN_FRONTEND=noninteractive
 retry apt-get update -y || fail "could not update the package list"

@@ -64,7 +64,7 @@ func (c *Cloud) Price(instanceType string) domain.Price {
 	return domain.Price{USD: p, Known: ok, Where: pricingPage}
 }
 
-// Supports reports whether a zone in the region offers the type; the zones
+// Supports reports whether a zone in the region offers the type. The zones
 // are kept for CreateBox.
 func (c *Cloud) Supports(ctx context.Context, instanceType string) (bool, error) {
 	zones, err := c.zonesFor(ctx, instanceType)

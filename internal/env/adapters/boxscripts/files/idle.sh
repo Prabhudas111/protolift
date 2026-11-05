@@ -16,7 +16,7 @@ STATE=/var/lib/protolift
 CONF=/etc/protolift/idle.conf
 mkdir -p "$STATE"
 
-# Read numbers only; the config is never executed.
+# Read numbers only. The config is never executed.
 num() { grep -E "^$1=[0-9]+$" "$CONF" 2>/dev/null | tail -1 | cut -d= -f2; }
 IDLE_MINUTES=$(num IDLE_MINUTES); IDLE_MINUTES=${IDLE_MINUTES:-30}
 MAX_HOURS=$(num MAX_HOURS); MAX_HOURS=${MAX_HOURS:-12}

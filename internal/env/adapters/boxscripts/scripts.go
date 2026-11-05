@@ -51,7 +51,7 @@ func New() (*Scripts, error) {
 // Boot renders the first-boot script.
 func (s *Scripts) Boot(st domain.Settings) string {
 	var b bytes.Buffer
-	// The template and its data are fixed at build time; tests prove it
+	// The template and its data are fixed at build time. Tests prove it
 	// renders, so an error here can only be a programming mistake.
 	if err := s.boot.Execute(&b, map[string]string{
 		"User": domain.BoxUser, "WorkRoot": domain.WorkRoot,
@@ -62,7 +62,7 @@ func (s *Scripts) Boot(st domain.Settings) string {
 	return b.String()
 }
 
-// IdleConfig is plain KEY=number lines; the idle script reads numbers only.
+// IdleConfig is plain KEY=number lines. The idle script reads numbers only.
 func (s *Scripts) IdleConfig(st domain.Settings, budgetMinutes int) []byte {
 	return []byte(fmt.Sprintf("IDLE_MINUTES=%d\nMAX_HOURS=%d\nBUDGET_MINUTES=%d\n", st.IdleMinutes, st.MaxHours, max(budgetMinutes, 0)))
 }
@@ -98,7 +98,7 @@ func UnitName(envName string, f domain.Folder) string {
 }
 
 // Start brings a folder up. Compose: `up -d --build`. Run command: a system
-// service that restarts on failure; it is only restarted when its unit
+// service that restarts on failure. It is only restarted when its unit
 // changed, so a second `up` does not interrupt a running dev server.
 func (s *Scripts) Start(f domain.Folder, envName string) string {
 	if f.IsCompose() {

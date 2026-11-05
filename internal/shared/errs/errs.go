@@ -4,7 +4,7 @@
 // Package errs is the single error model of protolift. Every failure a user
 // can see is an *Error with a Code (stable, for scripts and exit codes), a
 // Message (what went wrong, in plain words) and a Fix (what to do next).
-// Adapters translate provider errors into these codes; nothing above the
+// Adapters translate provider errors into these codes. Nothing above the
 // adapters ever inspects an AWS, SSH or HTTP error directly.
 package errs
 
@@ -103,7 +103,7 @@ func As(err error) *Error {
 }
 
 // ExitCode maps a code to a process exit status. 0 is success, 1 is a
-// generic failure; the rest let scripts tell failures apart.
+// generic failure. The rest let scripts tell failures apart.
 func ExitCode(err error) int {
 	switch CodeOf(err) {
 	case "":

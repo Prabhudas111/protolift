@@ -41,7 +41,7 @@ func (r *Remote) CheckFree(ps []int) error {
 				how = "`netstat -ano | findstr :" + strconv.Itoa(p) + "` shows what uses it"
 			}
 			return errs.Wrap(errs.CodePortBusy, err, fmt.Sprintf("port %d is already in use on your laptop", p),
-				"stop the app using it and run `protolift up` again; "+how)
+				"stop the app using it and run `protolift up` again. "+how)
 		}
 		if err := l.Close(); err != nil {
 			return errs.Wrap(errs.CodeInternal, err, "cannot release a test port", "")
@@ -108,7 +108,7 @@ func (r *Remote) runForward(ctx context.Context, b domain.Box, args []string, pr
 		case err := <-exited:
 			return tunnelClosed(err, stderr.String())
 		case <-deadline:
-			// Still trying; ssh's own ConnectTimeout will end it if stuck.
+			// Still trying. Ssh's own ConnectTimeout will end it if stuck.
 		case <-tick.C:
 			c, err := net.DialTimeout("tcp", "127.0.0.1:"+strconv.Itoa(probe), probeDialWait)
 			if err != nil {
@@ -136,7 +136,7 @@ func tunnelClosed(err error, stderr string) error {
 	if err == nil {
 		err = errors.New("ssh exited")
 	}
-	return errs.Wrap(errs.CodeNetwork, err, msg, "protolift reconnects by itself; check your internet if it keeps happening")
+	return errs.Wrap(errs.CodeNetwork, err, msg, "protolift reconnects by itself. Check your internet if it keeps happening")
 }
 
 // send never blocks the tunnel on a slow reader.

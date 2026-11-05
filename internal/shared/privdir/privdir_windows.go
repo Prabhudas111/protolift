@@ -4,7 +4,7 @@
 //go:build windows
 
 // Package privdir: on Windows protolift opens no unix sockets of its own
-// (ssh has no connection sharing; Mutagen uses a named pipe), so any path fits.
+// (ssh has no connection sharing. Mutagen uses a named pipe), so any path fits.
 package privdir
 
 // SocketMax matches the unix build for callers that compare lengths.

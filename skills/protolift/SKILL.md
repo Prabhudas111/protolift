@@ -18,7 +18,7 @@ same port on `localhost`. The user pays the cloud directly.
 
 ## Rules you must follow
 
-- **Money.** Creating a box costs money. Call `protolift_up` without `confirm_create` first; it
+- **Money.** Creating a box costs money. Call `protolift_up` without `confirm_create` first. It
   returns the size and price. Tell the user the price and get a clear yes before calling again
   with `confirm_create=true`. Never pass `--yes` to the CLI without that yes.
 - **Deleting.** `protolift_down` / `protolift down` deletes the box and its disk. Ask first, every time.

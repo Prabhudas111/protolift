@@ -82,7 +82,7 @@ func wire(ctx context.Context, cmd string, o opts, ui ports.UI) (*env.Manager, e
 	}
 	scripts, err := boxscripts.New()
 	if err != nil {
-		return nil, errs.Wrap(errs.CodeInternal, err, "the box scripts are broken", "this is a bug; please report it")
+		return nil, errs.Wrap(errs.CodeInternal, err, "the box scripts are broken", "this is a bug. Please report it")
 	}
 	return env.NewManager(env.Deps{
 		Cloud: cloud, Remote: remote, Tunnel: remote, Store: store,
@@ -184,7 +184,7 @@ func (l *lazySync) Remove(ctx context.Context, envID string) error {
 
 // runProxy is the hidden ProxyCommand for clouds whose tunnel protolift
 // opens itself: `protolift __proxy aws --region R [--profile P] --pubkey FILE
-// <instance-id> <port>`. ssh starts it once per connection; its stdin and
+// <instance-id> <port>`. ssh starts it once per connection. Its stdin and
 // stdout are the tunnel. (GCP's ProxyCommand is gcloud itself.)
 func runProxy(argv []string, stderr io.Writer) int {
 	if len(argv) == 0 || argv[0] != awscloud.Provider {

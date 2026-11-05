@@ -23,7 +23,7 @@ import (
 const envWatchEvery = 3 * time.Second
 
 // pushEnvFiles copies changed .env files laptop → box only, owner-only.
-// Contents are never printed; only file names are.
+// Contents are never printed. Only file names are.
 func (s *Service) pushEnvFiles(ctx context.Context, b domain.Box, p domain.Project, rec *ports.EnvRecord, announce bool) error {
 	if rec.EnvFileHash == nil {
 		rec.EnvFileHash = map[string]string{}
@@ -168,7 +168,7 @@ func (s *Service) reportClosedPorts(ctx context.Context, b domain.Box, ps []int)
 		case <-time.After(3 * time.Second):
 		}
 	}
-	s.d.UI.Warn("nothing is listening yet on port(s) " + strings.ReplaceAll(closed, "\n", ", ") + "; check `protolift logs`")
+	s.d.UI.Warn("nothing is listening yet on port(s) " + strings.ReplaceAll(closed, "\n", ", ") + ". Check `protolift logs`")
 }
 
 func (s *Service) summary(p domain.Project, b domain.Box, ps []domain.PortSpec) {
@@ -192,9 +192,9 @@ func (s *Service) mirror(ctx context.Context, b domain.Box, p domain.Project, re
 		case e := <-events:
 			switch {
 			case e.Connected:
-				s.d.UI.Info("ports mirrored: " + joinPorts(rec.Ports) + " (Ctrl-C to stop mirroring; the box keeps running)")
+				s.d.UI.Info("ports mirrored: " + joinPorts(rec.Ports) + " (Ctrl-C to stop mirroring. The box keeps running)")
 			case e.Err != nil:
-				s.d.UI.Warn(fmt.Sprintf("tunnel dropped (%v); reconnecting, try %d", e.Err, e.Attempt))
+				s.d.UI.Warn(fmt.Sprintf("tunnel dropped (%v). Reconnecting, try %d", e.Err, e.Attempt))
 			}
 		case <-tick.C:
 			if noEnv {
@@ -209,7 +209,7 @@ func (s *Service) mirror(ctx context.Context, b domain.Box, p domain.Project, re
 			}
 		case err := <-done:
 			if ctx.Err() != nil {
-				s.d.UI.Info(fmt.Sprintf("stopped mirroring. The box keeps running and stops itself after %d idle minutes; `protolift stop` stops it now.", p.Settings.IdleMinutes))
+				s.d.UI.Info(fmt.Sprintf("stopped mirroring. The box keeps running and stops itself after %d idle minutes. `protolift stop` stops it now.", p.Settings.IdleMinutes))
 				return nil
 			}
 			return err

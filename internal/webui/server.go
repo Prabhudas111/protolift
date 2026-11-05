@@ -5,10 +5,10 @@
 // settings, on this computer only. It is a driving adapter: it uses only the
 // env facade.
 //
-// Safety: it listens on 127.0.0.1 only; every request needs the random token
-// from the link (compared in constant time); the Host header must be the
-// loopback address, which blocks DNS-rebinding pages; nothing is allowed
-// cross-origin; the page loads nothing from outside.
+// Safety: it listens on 127.0.0.1 only. Every request needs the random token
+// from the link (compared in constant time). The Host header must be the
+// loopback address, which blocks DNS-rebinding pages. Nothing is allowed
+// cross-origin. The page loads nothing from outside.
 package webui
 
 import (

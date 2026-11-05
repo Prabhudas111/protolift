@@ -27,7 +27,7 @@ func (s *Service) Init(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops the box and keeps its disk; sync pauses so nothing retries.
+// Stop stops the box and keeps its disk. Sync pauses so nothing retries.
 func (s *Service) Stop(ctx context.Context, t Target) error {
 	p, b, err := s.requireBox(ctx, t)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *Service) Stop(ctx context.Context, t Target) error {
 	return nil
 }
 
-// Resize changes the box size; the disk and data stay.
+// Resize changes the box size. The disk and data stay.
 func (s *Service) Resize(ctx context.Context, t Target, size string) error {
 	sz, err := domain.SizeByName(size)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *Service) Down(ctx context.Context, t Target) error {
 		return err
 	}
 	if !ok {
-		s.d.UI.Info(p.Name + " has no box; cleaning up local files only")
+		s.d.UI.Info(p.Name + " has no box. Cleaning up local files only")
 	} else if !s.d.UI.Confirm(fmt.Sprintf("Delete box %s and everything on its disk? Your laptop files are not touched.", b.Name)) {
 		return errs.New(errs.CodeCancelled, "nothing was deleted", "")
 	}
@@ -244,7 +244,7 @@ func (s *Service) Status(ctx context.Context, t Target) (StatusReport, error) {
 		for _, x := range st {
 			line := fmt.Sprintf("%s: %s", x.Folder, x.Status)
 			if x.Conflict > 0 || x.Problems > 0 {
-				line += fmt.Sprintf(" (%d conflicts, %d problems; run `protolift ssh` to look)", x.Conflict, x.Problems)
+				line += fmt.Sprintf(" (%d conflicts, %d problems. Run `protolift ssh` to look)", x.Conflict, x.Problems)
 			}
 			r.Sync = append(r.Sync, line)
 		}
@@ -265,7 +265,7 @@ func (s *Service) sizeAdvice(peakGB float64, b domain.Box) string {
 		return fmt.Sprintf("peak use %.1f GB of %d GB: size %s would do (`protolift resize %s`, %s)",
 			peakGB, cur.MemoryGB, fit.Name, fit.Name, s.d.Cloud.Price(s.d.Cloud.InstanceType(fit, arch)).Text())
 	case peakGB > float64(cur.MemoryGB)*0.9:
-		return fmt.Sprintf("peak use %.1f GB of %d GB: the box is nearly full; consider `protolift resize` to a bigger size", peakGB, cur.MemoryGB)
+		return fmt.Sprintf("peak use %.1f GB of %d GB: the box is nearly full. Consider `protolift resize` to a bigger size", peakGB, cur.MemoryGB)
 	}
 	return ""
 }

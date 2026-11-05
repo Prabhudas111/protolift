@@ -294,7 +294,7 @@ func (w *world) output() string { return w.ui.out.String() }
 // errCode is a short helper for assertions.
 func errCode(err error) errs.Code { return errs.CodeOf(err) }
 
-// portsRecord is a saved env record; setupHash "" means setup never ran.
+// portsRecord is a saved env record. SetupHash "" means setup never ran.
 func portsRecord(setupHash string) ports.EnvRecord {
 	r := ports.EnvRecord{ID: "abc1234567"}
 	if setupHash != "" {

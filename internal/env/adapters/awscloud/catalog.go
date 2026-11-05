@@ -28,7 +28,7 @@ var types = map[string]struct{ arm, intel string }{
 }
 
 // pricesUSD: On-Demand Linux per hour, read from the AWS Price List API on
-// 2026-11-05. Shown as estimates; AWS bills the real amount.
+// 2026-11-05. Shown as estimates. AWS bills the real amount.
 var pricesUSD = map[string]map[string]float64{
 	"ap-south-1":     {"m7g.large": 0.0583, "m7g.xlarge": 0.1166, "m7g.2xlarge": 0.2333, "c7g.4xlarge": 0.3926, "m7i.large": 0.10605, "m7i.xlarge": 0.2121, "m7i.2xlarge": 0.4242, "c7i.4xlarge": 0.714},
 	"us-east-1":      {"m7g.large": 0.0816, "m7g.xlarge": 0.1632, "m7g.2xlarge": 0.3264, "c7g.4xlarge": 0.58, "m7i.large": 0.1008, "m7i.xlarge": 0.2016, "m7i.2xlarge": 0.4032, "c7i.4xlarge": 0.714},
@@ -83,7 +83,7 @@ func (c *Cloud) Supports(ctx context.Context, instanceType string) (bool, error)
 	return len(out.InstanceTypeOfferings) > 0, nil
 }
 
-// HostName: ssh's HostName is the instance id; the proxy resolves it.
+// HostName: ssh's HostName is the instance id. The proxy resolves it.
 func (c *Cloud) HostName(b domain.Box) string { return b.ID }
 
 // ProxyCommand runs protolift's own SSM proxy (see proxy.go).

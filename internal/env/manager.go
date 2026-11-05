@@ -3,7 +3,7 @@
 
 // Package env is the environment context: one project folder, its cloud
 // box, its sync and its ports. Manager is the only thing the command line
-// depends on; the layers below (domain → application → ports → adapters)
+// depends on. The layers below (domain → application → ports → adapters)
 // stay hidden behind it.
 package env
 
@@ -17,7 +17,7 @@ import (
 
 // OpenRequest says which project and cloud a Manager acts on, and who it
 // talks to. The terminal, the MCP server and the local screen each build
-// one; the composition root turns it into a wired Manager.
+// one. The composition root turns it into a wired Manager.
 type OpenRequest struct {
 	Dir, Name                       string
 	Cloud, Profile, Project, Region string

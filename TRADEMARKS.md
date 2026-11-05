@@ -9,12 +9,12 @@ permission to use them.
 
 You **may**:
 
-- say that your project works with protolift or is based on protolift;
+- say that your project works with protolift or is based on protolift.
 - link to this repository or to https://www.proto-engineer.com.
 
 You **may not**, without written permission:
 
-- name a fork, a product or a company "protolift" or anything confusingly similar;
+- name a fork, a product or a company "protolift" or anything confusingly similar.
 - use the Proto.Engineer name or logo in a way that suggests we made, checked
   or support your version.
 

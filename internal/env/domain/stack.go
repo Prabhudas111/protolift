@@ -147,14 +147,14 @@ func ComposePorts(configJSON []byte) ([]PortSpec, []PortWarning, error) {
 	for _, n := range names {
 		s := c.Services[n]
 		if s.NetworkMode == "host" {
-			warns = append(warns, PortWarning{n, "uses network_mode: host, so its ports are not listed; add them with `protolift config`"})
+			warns = append(warns, PortWarning{n, "uses network_mode: host, so its ports are not listed. Add them with `protolift config`"})
 		}
 		for _, p := range s.Ports {
 			switch {
 			case strings.EqualFold(p.Protocol, "udp"):
 				warns = append(warns, PortWarning{n, fmt.Sprintf("port %d is UDP, which the tunnel cannot carry", p.Target)})
 			case p.Published == "":
-				warns = append(warns, PortWarning{n, fmt.Sprintf("port %d has no fixed host port (Docker picks one at random); set one like \"%d:%d\"", p.Target, p.Target, p.Target)})
+				warns = append(warns, PortWarning{n, fmt.Sprintf("port %d has no fixed host port (Docker picks one at random). Set one like \"%d:%d\"", p.Target, p.Target, p.Target)})
 			default:
 				lo, hi, err := portRange(p.Published)
 				if err != nil {

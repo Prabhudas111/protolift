@@ -61,8 +61,8 @@ The import rules are enforced by `internal/archtest`. A change that breaks a lay
 1. Load the project and settings (outside the repo). Validate folders and ports.
 2. `Cloud.Ready`: has `init` been run here? If not: `NOT_SET_UP` with the fix.
 3. Find the box by tag `protolift:env=<id>`. Wake it if stopped. If there is none:
-   - pick a chip: registry checks, ARM only if every image has it;
-   - pick a size: memory estimate;
+   - pick a chip: registry checks, ARM only if every image has it.
+   - pick a size: memory estimate.
    - **ask with the price**, then create it.
 4. Wait for SSM, then for the first-boot marker. Close any shared ssh connection so the new docker group applies.
 5. Write the idle settings to the box.

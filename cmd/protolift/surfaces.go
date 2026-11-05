@@ -39,7 +39,7 @@ func opener(base opts) env.Opener {
 // may write to stdout while it runs: stdout is the protocol channel.
 func runMCP(ctx context.Context, o opts) error {
 	if err := mcpserver.New(opener(o), version).Run(ctx); err != nil && ctx.Err() == nil {
-		return errs.Wrap(errs.CodeInternal, err, "the MCP server stopped", "check the client's MCP logs; restart the client")
+		return errs.Wrap(errs.CodeInternal, err, "the MCP server stopped", "check the client's MCP logs. Restart the client")
 	}
 	return nil
 }
@@ -63,7 +63,7 @@ func runUI(ctx context.Context, o opts, stdout io.Writer) error {
 	}
 	fmt.Fprintln(stdout, "protolift control screen (this computer only):")
 	fmt.Fprintln(stdout, "  "+srv.URL())
-	fmt.Fprintln(stdout, "Keep this running; press Ctrl-C to close it.")
+	fmt.Fprintln(stdout, "Keep this running. Press Ctrl-C to close it.")
 	if !o.noOpen {
 		openBrowser(srv.URL())
 	}

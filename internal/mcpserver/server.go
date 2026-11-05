@@ -47,29 +47,29 @@ func New(open env.Opener, version string) *Server {
 type Project struct {
 	Dir   string `json:"dir" jsonschema:"absolute path of the project folder on this computer"`
 	Name  string `json:"name,omitempty" jsonschema:"optional second env name for the same folder"`
-	Cloud string `json:"cloud,omitempty" jsonschema:"aws or gcp; empty uses what the project used before"`
+	Cloud string `json:"cloud,omitempty" jsonschema:"aws or gcp. Empty uses what the project used before"`
 }
 
 // Empty is for tools without input.
 type Empty struct{}
 
-// ListInput picks the cloud and region to list; both optional.
+// ListInput picks the cloud and region to list. Both optional.
 type ListInput struct {
-	Cloud  string `json:"cloud,omitempty" jsonschema:"aws or gcp; empty uses the default"`
-	Region string `json:"region,omitempty" jsonschema:"region to list; empty uses your CLI default"`
+	Cloud  string `json:"cloud,omitempty" jsonschema:"aws or gcp. Empty uses the default"`
+	Region string `json:"region,omitempty" jsonschema:"region to list. Empty uses your CLI default"`
 }
 
 // UpInput starts a box.
 type UpInput struct {
 	Project
-	Size          string `json:"size,omitempty" jsonschema:"S, M, L or XL for a new box; empty lets protolift suggest one"`
-	ConfirmCreate bool   `json:"confirm_create,omitempty" jsonschema:"must be true to create a NEW box (it costs money); ask the user first and tell them the price from the previous answer"`
+	Size          string `json:"size,omitempty" jsonschema:"S, M, L or XL for a new box. Empty lets protolift suggest one"`
+	ConfirmCreate bool   `json:"confirm_create,omitempty" jsonschema:"must be true to create a NEW box (it costs money). Ask the user first and tell them the price from the previous answer"`
 }
 
 // ConfirmInput is for tools that delete.
 type ConfirmInput struct {
 	Project
-	Confirm bool `json:"confirm" jsonschema:"must be true; ask the user first, this deletes the box and its disk"`
+	Confirm bool `json:"confirm" jsonschema:"must be true. Ask the user first, this deletes the box and its disk"`
 }
 
 // BudgetInput sets caps.
@@ -99,11 +99,11 @@ func (s *Server) build() *mcp.Server {
 		Description: "Estimated spend today and this month per project and in total, with budgets."}, s.cost)
 	mcp.AddTool(srv, &mcp.Tool{Name: "protolift_up", Annotations: &mcp.ToolAnnotations{DestructiveHint: boolp(false), OpenWorldHint: boolp(true)},
 		Description: "Start or wake the project's cloud box, sync files, start its stack, and mirror its ports to localhost for this session. " +
-			"A NEW box costs money: the first call without confirm_create returns the price; ask the user, then call again with confirm_create=true."}, s.up)
+			"A NEW box costs money: the first call without confirm_create returns the price. Ask the user, then call again with confirm_create=true."}, s.up)
 	mcp.AddTool(srv, &mcp.Tool{Name: "protolift_stop", Annotations: &mcp.ToolAnnotations{DestructiveHint: boolp(false), IdempotentHint: true},
-		Description: "Stop the project's box. Files and data stay on its disk; it stops billing for compute."}, s.stop)
+		Description: "Stop the project's box. Files and data stay on its disk. It stops billing for compute."}, s.stop)
 	mcp.AddTool(srv, &mcp.Tool{Name: "protolift_down", Annotations: &mcp.ToolAnnotations{DestructiveHint: boolp(true)},
-		Description: "Delete the project's box and its disk. Laptop files are not touched. Requires confirm=true; ask the user first."}, s.down)
+		Description: "Delete the project's box and its disk. Laptop files are not touched. Requires confirm=true. Ask the user first."}, s.down)
 	mcp.AddTool(srv, &mcp.Tool{Name: "protolift_set_budget", Annotations: &mcp.ToolAnnotations{DestructiveHint: boolp(false), IdempotentHint: true},
 		Description: "Set daily and monthly spending caps in US dollars, for one project or (all=true) for every project together."}, s.setBudget)
 	return srv
@@ -117,7 +117,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 // HTTP serves the MCP Streamable HTTP transport on 127.0.0.1, for clients
-// that connect to a URL. Every request needs the bearer token; the Host must
+// that connect to a URL. Every request needs the bearer token. The Host must
 // be the loopback address, which blocks DNS-rebinding web pages.
 func (s *Server) HTTP(ctx context.Context, ln net.Listener, token string) error {
 	defer s.stopMirrors()
@@ -261,7 +261,7 @@ func (s *Server) startMirror(p Project, m *env.Manager, t env.Target) {
 	s.mirrors[key(p)] = cancel
 	go func() {
 		// The mirror reports through the call's log only while the call
-		// runs; afterwards it reconnects quietly until the session ends.
+		// runs. Afterwards it reconnects quietly until the session ends.
 		if err := m.Mirror(ctx, t); err != nil && ctx.Err() == nil {
 			s.mu.Lock()
 			delete(s.mirrors, key(p))
@@ -327,7 +327,7 @@ func (s *Server) setBudget(ctx context.Context, _ *mcp.CallToolRequest, in Budge
 	} else {
 		err = m.SetBudget(t, b)
 	}
-	return result(ui, fmt.Sprintf("budget set: daily $%.2f, monthly $%.2f (0 = no cap); it applies from the next up", b.DailyUSD, b.MonthlyUSD), err)
+	return result(ui, fmt.Sprintf("budget set: daily $%.2f, monthly $%.2f (0 = no cap). It applies from the next up", b.DailyUSD, b.MonthlyUSD), err)
 }
 
 func formatStatus(r env.StatusReport) string {
@@ -350,7 +350,7 @@ func formatStatus(r env.StatusReport) string {
 			fmt.Fprintf(&b, "tip %s\n", r.Advice)
 		}
 	}
-	fmt.Fprintf(&b, "spent today $%.2f, this month $%.2f; caps daily $%.2f, monthly $%.2f (0 = none)\n",
+	fmt.Fprintf(&b, "spent today $%.2f, this month $%.2f. Caps daily $%.2f, monthly $%.2f (0 = none)\n",
 		r.SpentToday, r.SpentMonth, r.Budget.DailyUSD, r.Budget.MonthlyUSD)
 	return b.String()
 }
@@ -360,7 +360,7 @@ func formatCost(r env.CostReport) string {
 	for _, l := range r.Lines {
 		fmt.Fprintf(&b, "%s (%s %s): today $%.2f, month $%.2f\n", l.Name, l.Provider, l.Region, l.Today, l.Month)
 	}
-	fmt.Fprintf(&b, "total: today $%.2f, month $%.2f; total caps daily $%.2f, monthly $%.2f (0 = none)\n%s\n",
+	fmt.Fprintf(&b, "total: today $%.2f, month $%.2f. Total caps daily $%.2f, monthly $%.2f (0 = none)\n%s\n",
 		r.Today, r.Month, r.Global.DailyUSD, r.Global.MonthlyUSD, r.Note)
 	return b.String()
 }

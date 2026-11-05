@@ -17,7 +17,7 @@ import (
 func printStatus(w io.Writer, r env.StatusReport) {
 	fmt.Fprintf(w, "project  %s\n", r.Project)
 	if r.Box == nil {
-		fmt.Fprintln(w, "box      none yet; run `protolift up`")
+		fmt.Fprintln(w, "box      none yet. Run `protolift up`")
 		return
 	}
 	b := r.Box

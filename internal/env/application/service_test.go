@@ -129,7 +129,7 @@ func TestStatusAdvisesSmallerSize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 3.1 GB peak × 1.3 → fits S; the box is L.
+	// 3.1 GB peak × 1.3 → fits S. The box is L.
 	// a.l = 8 CPU × $0.04 = $0.32/h, for 2 hours = $0.64.
 	if !strings.Contains(r.Advice, "size S") || !strings.Contains(r.CostSoFar, "$0.64") {
 		t.Fatalf("status = %+v", r)
@@ -170,7 +170,7 @@ func TestUpNeverOverridesTheUsersChip(t *testing.T) {
 	w.cloud.noARM = true
 	err := w.svc.Up(context.Background(), UpRequest{Detached: true, Arch: domain.ArchARM})
 	if errCode(err) != errs.CodeCapacity {
-		t.Fatalf("a chip the user chose must not change silently; want CAPACITY, got %v", err)
+		t.Fatalf("a chip the user chose must not change silently. Want CAPACITY, got %v", err)
 	}
 }
 
@@ -192,7 +192,7 @@ func TestUpRefusesWhenBudgetIsUsedUp(t *testing.T) {
 
 func TestUpTellsTheBoxItsBudgetMinutes(t *testing.T) {
 	w := newWorld(true)
-	// Global $1/day; a.s costs 2 CPU × $0.04 = $0.08/h → 750 minutes.
+	// Global $1/day. A.s costs 2 CPU × $0.04 = $0.08/h → 750 minutes.
 	w.store.global = domain.Budget{DailyUSD: 1}
 	if err := w.svc.Up(context.Background(), UpRequest{Detached: true}); err != nil {
 		t.Fatal(err)

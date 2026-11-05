@@ -6,15 +6,7 @@ Your laptop is too slow or too full for Docker and your services? protolift star
 **your** AWS or Google Cloud account, keeps your files in sync both ways, runs your stack there, and mirrors every
 port back to the same port on your laptop. Your editor, browser and tools do not change.
 
-```text
-  your laptop                                   your AWS / Google Cloud account
- ┌──────────────────────┐   private tunnel    ┌───────────────────────────┐
- │ editor  ── files ────┼─── live sync ───────┼─▶ /work/your-app          │
- │ browser ── :3000 ────┼─── same ports ──────┼─▶ web :3000  api :8080    │
- │ protolift            │   (no open ports)   │   postgres, redis, ...    │
- └──────────────────────┘                     │   stops itself when idle  │
-                                              └───────────────────────────┘
-```
+<p align="center"><img src="docs/images/setup-flow.svg" width="880" alt="Setup flow: install, protolift init, protolift up starts a box in your own cloud account, you work on localhost with the same ports and live file sync, and the box stops itself after 30 idle minutes, at its budget or after 12 hours"></p>
 
 - **Your account, your bill.** protolift runs no server. It uses your own cloud login and you pay the cloud directly.
 - **Any cloud, plug-in style.** AWS and Google Cloud today (`--cloud aws|gcp`). Each cloud is one adapter.
@@ -68,6 +60,8 @@ protolift up --cloud gcp
 `up` prints your links (`http://localhost:3000` and so on) and keeps the ports mirrored until you press
 Ctrl-C. The box keeps running after that and stops itself when idle.
 
+<p align="center"><img src="docs/images/protolift-up.svg" width="880" alt="A real run: protolift up prints http://localhost:18080, protolift status shows the box, sync and ports, protolift cost shows spend against the daily and monthly caps"></p>
+
 | Command | What it does |
 |---|---|
 | `protolift init` | Sets up your AWS account once: an access role and a firewall group with no inbound rules. |
@@ -85,6 +79,13 @@ Ctrl-C. The box keeps running after that and stops itself when idle.
 | `protolift mcp` | MCP server for AI agents (`--http` for a local URL). See [docs/agents.md](docs/agents.md). |
 | `protolift ssh` | Opens a terminal on the box. |
 | `protolift logs [service]` | Follows logs on the box. |
+
+### The control screen
+
+`protolift ui` opens this page on your computer only. It shows each box, its spend against your caps, and
+start and stop buttons.
+
+<p align="center"><img src="docs/images/control-screen.png" width="820" alt="The protolift control screen: the shop-demo box is running on aws ap-south-1, today $0.02 of a $5.00 cap, month $0.02 of $60.00, a link to localhost:18080, and Start and Stop buttons"></p>
 
 ### Box sizes
 

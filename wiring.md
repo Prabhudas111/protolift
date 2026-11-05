@@ -6,7 +6,7 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 
 ---
 
-## [2026-11-06 00:30] plain sentences everywhere; licence appendix filled
+## [2026-11-06 00:30] plain sentences everywhere, licence appendix filled
 
 **Symptom:** The founder flagged semicolons in docs and messages as reading machine-written, and the LICENSE appendix showing "Copyright [yyyy] [name of copyright owner]".
 **Root cause:** Prose (docs, error messages and fixes, comments, MCP schema text) joined clauses with semicolons, and the Apache appendix template kept its placeholders.

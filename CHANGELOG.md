@@ -21,5 +21,8 @@ First release.
 - Several folders on one box via a settings file kept outside your repo.
 - macOS, Linux and Windows on Intel and ARM.
 
-Measured on a fresh box: first `up` in 93 s, later `up` in 15 s, waking a stopped box in 27 s,
+Measured on Google Cloud (asia-south1, n2-standard-2): first `up` 278 s, wake 41 s, a saved change visible
+on `localhost` through IAP in 0.22 s (median of 10).
+
+Measured on AWS, on a fresh box: first `up` in 93 s, later `up` in 15 s, waking a stopped box in 27 s,
 and a saved change visible on `localhost` in 0.22 s (median of 10).

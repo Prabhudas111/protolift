@@ -61,8 +61,11 @@ func TestTypesRoundTrip(t *testing.T) {
 			}
 		}
 	}
-	if p := c.Price("n2-standard-2"); p.Known && p.USD <= 0 {
-		t.Fatal("a known price must be positive")
+	if p := c.Price("n2-standard-2"); !p.Known || p.USD != 0.0971 {
+		t.Fatalf("us-central1 n2-standard-2 = %+v", p)
+	}
+	if (&Cloud{region: "asia-south1"}).Price("t2a-standard-2").Known {
+		t.Fatal("asia-south1 has no T2A, so no price")
 	}
 }
 
@@ -88,5 +91,20 @@ func TestToBoxStopTime(t *testing.T) {
 	b := c.toBox(instance{Name: "x", Status: "TERMINATED", LastStop: "2026-11-05T12:00:00.000-07:00"})
 	if b.StoppedAt.IsZero() || b.StoppedAt.UTC().Hour() != 19 {
 		t.Fatalf("stop time = %v", b.StoppedAt)
+	}
+}
+
+func TestListFilterMatchesZoneURLs(t *testing.T) {
+	c := &Cloud{region: "asia-south1"}
+	f := c.listFilter("abc1234567")
+	zone := "https://www.googleapis.com/compute/v1/projects/example/zones/asia-south1-a"
+	if !strings.Contains(f, "zone~/zones/asia-south1-") || !strings.Contains(zone, "/zones/asia-south1-") {
+		t.Fatalf("filter %q must match zone URLs like %q", f, zone)
+	}
+	if strings.Contains(f, "zone~^") {
+		t.Fatal("anchoring at the start never matches a zone URL")
+	}
+	if !strings.Contains(f, "labels.protolift-env=abc1234567") || strings.Contains(c.listFilter(""), "protolift-env") {
+		t.Fatalf("env filter wrong: %q", f)
 	}
 }

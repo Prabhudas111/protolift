@@ -55,7 +55,7 @@ func (s *Scripts) Boot(st domain.Settings) string {
 	// renders, so an error here can only be a programming mistake.
 	if err := s.boot.Execute(&b, map[string]string{
 		"User": domain.BoxUser, "WorkRoot": domain.WorkRoot,
-		"IdleConfig": string(s.IdleConfig(st)), "IdleScript": idleScript,
+		"IdleConfig": string(s.IdleConfig(st, 0)), "IdleScript": idleScript,
 	}); err != nil {
 		panic(fmt.Sprintf("boot template: %v", err))
 	}
@@ -63,8 +63,8 @@ func (s *Scripts) Boot(st domain.Settings) string {
 }
 
 // IdleConfig is plain KEY=number lines; the idle script reads numbers only.
-func (s *Scripts) IdleConfig(st domain.Settings) []byte {
-	return []byte(fmt.Sprintf("IDLE_MINUTES=%d\nMAX_HOURS=%d\n", st.IdleMinutes, st.MaxHours))
+func (s *Scripts) IdleConfig(st domain.Settings, budgetMinutes int) []byte {
+	return []byte(fmt.Sprintf("IDLE_MINUTES=%d\nMAX_HOURS=%d\nBUDGET_MINUTES=%d\n", st.IdleMinutes, st.MaxHours, max(budgetMinutes, 0)))
 }
 
 // IdleConfigPath is where IdleConfig lives on the box.

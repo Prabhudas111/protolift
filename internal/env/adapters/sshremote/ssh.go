@@ -34,13 +34,20 @@ import (
 // stderrTail is how much of a failed command's stderr is shown.
 const stderrTail = 2000
 
+// Router is the part of a cloud the ssh adapter needs: how to name a box
+// and how to reach it through that cloud's private tunnel. The composition
+// root passes the active cloud adapter, so this package never knows which
+// cloud it talks to.
+type Router interface {
+	HostName(b domain.Box) string
+	ProxyCommand(b domain.Box, pubKeyPath string) string
+}
+
 // Options configure the adapter. The composition root fills them in.
 type Options struct {
-	Root    string // protolift home (~/.protolift)
-	Self    string // path of the protolift binary, used as ProxyCommand
-	Region  string
-	Profile string
-	SSH     string // path of the real ssh client
+	Root   string // protolift home (~/.protolift)
+	SSH    string // path of the real ssh client
+	Router Router
 }
 
 // Remote implements ports.Remote and ports.Tunnel.
@@ -69,8 +76,8 @@ func FindSSH() (string, error) {
 
 // New checks the options and prepares protolift's ssh folder.
 func New(o Options) (*Remote, error) {
-	if o.Root == "" || o.Self == "" || o.Region == "" || o.SSH == "" {
-		return nil, errs.New(errs.CodeInternal, "ssh adapter wired without root, binary, region or ssh path", "this is a bug; please report it")
+	if o.Root == "" || o.SSH == "" || o.Router == nil {
+		return nil, errs.New(errs.CodeInternal, "ssh adapter wired without root, ssh path or cloud router", "this is a bug; please report it")
 	}
 	if err := os.MkdirAll(filepath.Join(o.Root, "ssh", "envs"), 0o700); err != nil {
 		return nil, errs.Wrap(errs.CodeInternal, err, "cannot create the ssh folder", "")
@@ -130,15 +137,11 @@ func (r *Remote) ensureConfig(b domain.Box) error {
 		return err
 	}
 	key := r.keyPath(b.EnvID)
-	proxy := fmt.Sprintf("%s __proxy --region %s", q(r.o.Self), r.o.Region)
-	if r.o.Profile != "" {
-		proxy += " --profile " + q(r.o.Profile)
-	}
-	proxy += fmt.Sprintf(" --pubkey %s %%h %%p", q(key+".pub"))
+	proxy := r.o.Router.ProxyCommand(b, key+".pub")
 	var cb strings.Builder
 	fmt.Fprintf(&cb, "Host %s\n", Alias(b))
 	for _, kv := range [][2]string{
-		{"HostName", b.ID}, {"User", domain.BoxUser}, {"IdentityFile", q(key)}, {"IdentitiesOnly", "yes"},
+		{"HostName", r.o.Router.HostName(b)}, {"User", domain.BoxUser}, {"IdentityFile", q(key)}, {"IdentitiesOnly", "yes"},
 		{"HostKeyAlias", b.ID}, {"UserKnownHostsFile", q(filepath.Join(r.o.Root, "ssh", "known_hosts"))},
 		{"StrictHostKeyChecking", "accept-new"}, {"ProxyCommand", proxy},
 		{"ServerAliveInterval", "15"}, {"ServerAliveCountMax", "4"}, {"ConnectTimeout", "60"}, {"LogLevel", "ERROR"},
@@ -291,6 +294,20 @@ func noSharedConnection(stderr string) bool {
 	s := strings.ToLower(stderr)
 	return strings.Contains(s, "no such file") || strings.Contains(s, "connection refused") ||
 		strings.Contains(s, "no controlpath") || strings.Contains(s, "control socket connect")
+}
+
+// PublicKey returns the env's public key, creating the pair once.
+func (r *Remote) PublicKey(envID string) (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if err := r.ensureKey(envID); err != nil {
+		return "", err
+	}
+	b, err := os.ReadFile(r.keyPath(envID) + ".pub")
+	if err != nil {
+		return "", errs.Wrap(errs.CodeInternal, err, "cannot read the public key", "")
+	}
+	return strings.TrimSpace(string(b)), nil
 }
 
 // Forget removes the box's Host block and its saved host key.

@@ -12,14 +12,32 @@ import (
 
 	"github.com/Prabhudas111/protolift/internal/env/application"
 	"github.com/Prabhudas111/protolift/internal/env/domain"
+	"github.com/Prabhudas111/protolift/internal/env/ports"
 )
+
+// OpenRequest says which project and cloud a Manager acts on, and who it
+// talks to. The terminal, the MCP server and the local screen each build
+// one; the composition root turns it into a wired Manager.
+type OpenRequest struct {
+	Dir, Name                       string
+	Cloud, Profile, Project, Region string
+	UI                              UI
+}
+
+// Opener builds a Manager. Driving adapters depend on this function type,
+// never on the composition root itself.
+type Opener func(ctx context.Context, r OpenRequest) (*Manager, error)
 
 // Re-exported request types, so callers never import the layers.
 type (
+	UI           = ports.UI
 	Target       = application.Target
 	UpRequest    = application.UpRequest
 	StatusReport = application.StatusReport
+	CostReport   = application.CostReport
+	CostLine     = application.CostLine
 	Deps         = application.Deps
+	Budget       = domain.Budget
 	Box          = domain.Box
 	Arch         = domain.Arch
 )
@@ -75,6 +93,23 @@ func (m *Manager) Config(ctx context.Context, t Target) (string, error) { return
 
 // SSH opens a terminal on the box.
 func (m *Manager) SSH(ctx context.Context, t Target) error { return m.svc.SSH(ctx, t) }
+
+// Cost totals estimated spend for every project on this laptop.
+func (m *Manager) Cost(ctx context.Context) (CostReport, error) { return m.svc.Cost(ctx) }
+
+// SetBudget changes one project's caps.
+func (m *Manager) SetBudget(t Target, b Budget) error { return m.svc.SetBudget(t, b) }
+
+// SetGlobalBudget changes the caps across every project.
+func (m *Manager) SetGlobalBudget(b Budget) error { return m.svc.SetGlobalBudget(b) }
+
+// SetStops changes the idle stop and the hard run limit.
+func (m *Manager) SetStops(t Target, idleMinutes, maxHours int) error {
+	return m.svc.SetStops(t, idleMinutes, maxHours)
+}
+
+// Mirror re-attaches the ports of a running box until ctx ends.
+func (m *Manager) Mirror(ctx context.Context, t Target) error { return m.svc.Mirror(ctx, t) }
 
 // Logs follows logs on the box.
 func (m *Manager) Logs(ctx context.Context, t Target, service string) error {

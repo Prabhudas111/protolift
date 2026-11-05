@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>protolift · control</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark" aria-hidden="true"></span><b>protolift</b><span class="sub">control · this computer only</span></div>
+  <div class="totals" id="totals" aria-live="polite">loading…</div>
+</header>
+<main>
+  <section class="panel" aria-labelledby="g-h">
+    <h2 id="g-h">Total budget, every project</h2>
+    <form class="row" id="global">
+      <label>Daily cap $ <input id="g-daily" type="number" min="0" step="0.5" inputmode="decimal"></label>
+      <label>Monthly cap $ <input id="g-monthly" type="number" min="0" step="1" inputmode="decimal"></label>
+      <button type="submit">Save</button>
+      <span class="hint">0 = no cap. New caps apply from the next start.</span>
+    </form>
+  </section>
+  <section aria-labelledby="p-h">
+    <h2 id="p-h">Projects</h2>
+    <div id="projects" class="grid"></div>
+  </section>
+  <p class="note" id="note"></p>
+</main>
+<footer>Free and open source · Built by <a href="https://www.proto-engineer.com" target="_blank" rel="noopener noreferrer">Proto.Engineer</a></footer>
+<script src="app.js"></script>
+</body>
+</html>

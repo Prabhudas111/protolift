@@ -1,36 +1,30 @@
 # Contributing to protolift
 
-Thank you for helping. protolift is created and maintained by
-Prabhudas Avanigadda (Proto.Engineer).
+protolift is created and maintained by Prabhudas Avanigadda (Proto.Engineer).
 
-## Before you send a change
+## No outside code contributions
 
-1. Open an issue first for anything bigger than a small fix, so we can agree on the approach.
-2. Keep one change per pull request.
-3. Run the checks:
+This repository does **not** accept code from outside contributors. Pull requests from anyone other
+than the maintainer are closed automatically, without review. This keeps the copyright and the
+direction of the project with one owner.
 
-   ```sh
-   go vet ./...
-   go test ./...
-   go build ./cmd/protolift
-   ```
+You are very welcome to:
 
-4. Every new Go file starts with the copyright header:
+- **report a bug or ask for a feature**: open an issue,
+- **report a security problem**: privately, see [SECURITY.md](SECURITY.md),
+- **fork it** under the Apache License 2.0. Give your fork a different name (see [TRADEMARKS.md](TRADEMARKS.md)).
 
-   ```go
-   // Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
-   // SPDX-License-Identifier: Apache-2.0
-   ```
+## For the maintainer
 
-## Your rights and ours
+```sh
+go vet ./...
+go test ./...
+go build ./cmd/protolift
+```
 
-By sending a contribution (a pull request, a patch or a suggestion with code), you agree that:
+Every Go file starts with:
 
-1. You wrote it, or you have the right to submit it.
-2. It is licensed to everyone under the Apache License 2.0, the same as the rest of the project.
-3. You also give Prabhudas Avanigadda a permanent, worldwide, royalty-free right to use,
-   change, relicense and distribute your contribution as part of protolift or any product
-   built from it, including under other license terms.
-
-You keep the copyright in your own contribution. Add a `Signed-off-by:` line to each
-commit (`git commit -s`) to confirm the points above.
+```go
+// Copyright 2026 Prabhudas Avanigadda (Proto.Engineer)
+// SPDX-License-Identifier: Apache-2.0
+```

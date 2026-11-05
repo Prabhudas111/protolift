@@ -6,6 +6,28 @@ Format: newest entries at top. Never delete entries — if superseded, add a new
 
 ---
 
+## [2026-11-05 22:00] multi-cloud, cost, MCP, local screen — v0.1.0 scope
+
+**Symptom:** v0.1 was AWS-only with no spend caps and no way for AI agents or a screen to drive it. The founder froze v0.1 scope as: AWS+GCP plug-ins, MCP, cost control, local UI, skill, no outside collaborators.
+**Root cause:** Cloud knowledge leaked outside the cloud adapter: sshremote built the AWS `__proxy` line, and domain sizes held EC2 types and prices. A second cloud could not plug in at one place. Spend had no record and no stop.
+**Fix:** `ports.Cloud` owns types, prices, Supports, ProxyCommand, HostName and key delivery. `cmd/protolift/providers.go` is the cloud registry. New `gcpcloud` adapter (gcloud CLI, IAP-only ssh, no service account, max-run-duration backstop). The domain ledger + budgets are checked before start, and BUDGET_MINUTES is enforced by the box idle script. `internal/mcpserver` (stdio + loopback HTTP with token) and `internal/webui` (loopback, token, host check, CSP) use only the `env.Manager` facade through an `env.Opener`. Agent Skill in `skills/protolift`. CONTRIBUTING + workflow close outside PRs.
+**Files touched:** internal/env/{domain,ports,application}, adapters/{awscloud,gcpcloud,sshremote,filestore,boxscripts}, internal/{mcpserver,webui,archtest,shared/errs}, cmd/protolift/*, docs/*, skills/*, .github/workflows/close-outside-prs.yml
+**Wiring mapped (callers/consumers of touched symbols):**
+- `ports.Cloud` → implemented by awscloud, gcpcloud and the application fakes. Used by application/* and passed to sshremote as its Router (wire.go).
+- `sshremote.Options` → built only in `cmd/protolift/wire.go`.
+- `env.Opener` → built only by `cmd/protolift/surfaces.go`. Consumed by mcpserver and webui.
+- `Scripts.IdleConfig(settings, budgetMinutes)` → callers: application/up.go, boxscripts.Boot.
+**Blast radius:** high (shared ports and facade), approved as the frozen v0.1 scope.
+**Tests run:** go vet clean · go test ./... all green (new: GCP adapter, AWS catalog, ledger/budget, Intel fallback, budget refusal + box minutes, MCP in-memory client, webui guard) · six-platform build · MCP stdio handshake against the real binary (7 tools, confirm enforced) · webui live: 401 without token, 403 on a rebinding Host, CSP set.
+**Regression risks (for next fix in this area):**
+- New cloud = adapter + providers.go entry only. If a use case needs an `if provider ==` branch, the Cloud port is missing a method.
+- archtest `matches`: no trailing slash = exact package. Keep entry points (mcpserver/webui) on the facade only.
+- The budget stop runs at 5-minute granularity. Unknown price means no budget stop, and protolift warns. GCP price table is empty until filled from the Billing Catalog.
+- MCP stdout is the protocol channel. Nothing may print to stdout in `mcp` mode.
+**Related:** ADR 0007–0010, docs/cost.md, docs/agents.md, docs/iam/gcp.md.
+
+---
+
 ## [2026-11-05 17:30] protolift v0.1.0 first build — initial
 
 **Symptom:** Developers whose laptops cannot run their stack had only a hand-built cloud box, with copy-plus-rebuild per change (~90 s), one hand-made tunnel per port, and no start, stop or clean-up.

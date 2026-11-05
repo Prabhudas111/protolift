@@ -122,21 +122,20 @@ func TestMergePortsRefusesDoubleOwner(t *testing.T) {
 	}
 }
 
-func TestPricesAndCost(t *testing.T) {
-	if _, ok := HourlyUSD("ap-south-1", "m7g.xlarge"); !ok {
-		t.Fatal("known price missing")
+func TestPriceAndCost(t *testing.T) {
+	known := Price{USD: 0.0816, Known: true}
+	if known.Text() != "about $0.08/hour" {
+		t.Fatalf("text = %q", known.Text())
 	}
-	if PriceText("xx-none-1", "m7g.xlarge") == "" {
-		t.Fatal("unknown region must still give text")
+	if (Price{Where: "example.com/pricing"}).Text() != "see example.com/pricing for the price" {
+		t.Fatal("unknown price must point at the pricing page")
 	}
 	start := time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)
-	c, ok := CostSoFar("us-east-1", "m7g.large", start, start.Add(2*time.Hour))
+	c, ok := CostSoFar(known, start, start.Add(2*time.Hour))
 	if !ok || c < 0.163 || c > 0.164 {
 		t.Fatalf("cost = %v %v", c, ok)
 	}
-	for _, s := range Sizes {
-		if _, a, ok := SizeOfType(s.ARM); !ok || a != ArchARM {
-			t.Fatalf("SizeOfType(%s) failed", s.ARM)
-		}
+	if _, ok := CostSoFar(Price{}, start, start.Add(time.Hour)); ok {
+		t.Fatal("an unknown price has no cost")
 	}
 }

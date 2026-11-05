@@ -177,7 +177,7 @@ func (s *Service) summary(p domain.Project, b domain.Box, ps []domain.PortSpec) 
 		s.d.UI.Info(fmt.Sprintf("%-14s http://localhost:%d", x.Source, x.Port))
 	}
 	s.d.UI.Info(fmt.Sprintf("box %s · %s · stops itself after %d min idle (max %d h)",
-		b.InstanceType, domain.PriceText(s.d.Cloud.Region(), b.InstanceType), p.Settings.IdleMinutes, p.Settings.MaxHours))
+		b.InstanceType, s.d.Cloud.Price(b.InstanceType).Text(), p.Settings.IdleMinutes, p.Settings.MaxHours))
 }
 
 // mirror keeps the port tunnel up and pushes .env changes until Ctrl-C.

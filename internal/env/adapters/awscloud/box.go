@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -70,6 +71,7 @@ func (c *Cloud) toBox(i ec2t.Instance) domain.Box {
 	if i.Architecture == ec2t.ArchitectureValuesArm64 {
 		b.Arch = domain.ArchARM
 	}
+	b.StoppedAt = stopTime(aws.ToString(i.StateTransitionReason))
 	for _, t := range i.Tags {
 		switch aws.ToString(t.Key) {
 		case "Name":
@@ -79,6 +81,20 @@ func (c *Cloud) toBox(i ec2t.Instance) domain.Box {
 		}
 	}
 	return b
+}
+
+// stopTime reads EC2's "User initiated (2026-11-05 10:00:00 GMT)" reason,
+// which is also what an in-box shutdown reports. Zero when absent.
+func stopTime(reason string) time.Time {
+	open, close := strings.Index(reason, "("), strings.Index(reason, " GMT)")
+	if open < 0 || close <= open {
+		return time.Time{}
+	}
+	t, err := time.Parse("2006-01-02 15:04:05", reason[open+1:close])
+	if err != nil {
+		return time.Time{}
+	}
+	return t.UTC()
 }
 
 // FindBox returns the env's box; two boxes for one env is a CONFLICT the

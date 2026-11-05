@@ -43,10 +43,12 @@ func (f Folder) IsCompose() bool { return f.Run == "" }
 
 // Settings are the user's optional choices for one project.
 type Settings struct {
+	Cloud       string // provider name (aws, gcp); "" means the default
 	Size        string // S, M, L, XL or "" for a suggestion
 	Arch        Arch   // "" means detect
 	IdleMinutes int
 	MaxHours    int
+	Budget      Budget // this project's caps; the global caps live apart
 }
 
 // Project is one environment: a folder on the laptop plus its settings.
@@ -129,6 +131,9 @@ func (s Settings) Normalize() (Settings, error) {
 		if _, err := SizeByName(s.Size); err != nil {
 			return s, err
 		}
+	}
+	if err := s.Budget.Validate(); err != nil {
+		return s, err
 	}
 	if s.Arch != "" && s.Arch != ArchARM && s.Arch != ArchIntel {
 		return s, errs.New(errs.CodeInvalidInput, fmt.Sprintf("arch %q is not known", s.Arch), `use "arm" or "intel"`)

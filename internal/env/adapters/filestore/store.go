@@ -56,10 +56,13 @@ func (s *Store) Dir(parts ...string) (string, error) {
 
 // settingsFile is the TOML shape of a project's settings.
 type settingsFile struct {
+	Cloud       string        `toml:"cloud"`
 	Size        string        `toml:"size"`
 	Arch        string        `toml:"arch"`
 	IdleMinutes int           `toml:"idle_minutes"`
 	MaxHours    int           `toml:"max_hours"`
+	DailyUSD    float64       `toml:"daily_budget_usd"`
+	MonthlyUSD  float64       `toml:"monthly_budget_usd"`
 	Folders     []folderEntry `toml:"folder"`
 }
 
@@ -97,7 +100,8 @@ func (s *Store) LoadProject(_ context.Context, dir, name string) (domain.Project
 		return domain.Project{}, errs.Wrap(errs.CodeInvalidInput, err, "your settings file has a mistake",
 			"fix "+settingsPath+" (run `protolift config` to see its path)")
 	}
-	settings, err := domain.Settings{Size: sf.Size, Arch: domain.Arch(strings.ToLower(sf.Arch)), IdleMinutes: sf.IdleMinutes, MaxHours: sf.MaxHours}.Normalize()
+	settings, err := domain.Settings{Cloud: strings.ToLower(sf.Cloud), Size: sf.Size, Arch: domain.Arch(strings.ToLower(sf.Arch)), IdleMinutes: sf.IdleMinutes, MaxHours: sf.MaxHours,
+		Budget: domain.Budget{DailyUSD: sf.DailyUSD, MonthlyUSD: sf.MonthlyUSD}}.Normalize()
 	if err != nil {
 		return domain.Project{}, err
 	}
@@ -263,6 +267,8 @@ func template(dir string) string {
 	return fmt.Sprintf(`# protolift settings for %s
 # This file lives outside your project, so your repo stays unchanged.
 
+# Cloud: "aws" or "gcp". Empty = aws (or --cloud).
+cloud = ""
 # Box size: S (2 CPU, 8 GB), M (4, 16), L (8, 32), XL (16, 32). Empty = protolift suggests one.
 size = ""
 # Chip: "arm", "intel" or "" to detect from your images.
@@ -270,6 +276,10 @@ arch = ""
 # The box stops itself after this many idle minutes, and always after max_hours.
 idle_minutes = %d
 max_hours = %d
+# Spending caps for this project, in US dollars (0 = no cap). protolift
+# refuses to start over budget, and the box stops itself when the budget runs out.
+daily_budget_usd = 0
+monthly_budget_usd = 0
 
 # One [[folder]] per folder to sync. A folder with a compose file needs only "path".
 # A folder started by a command needs "run" and the "ports" it listens on.
